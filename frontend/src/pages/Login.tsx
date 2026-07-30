@@ -6,6 +6,7 @@ import { z } from 'zod';
 
 import { Button } from '@/components/ui/Button';
 import { FieldError, Input, Label } from '@/components/ui/Input';
+import { PageSpinner } from '@/components/ui/Spinner';
 import { useAuthStore } from '@/stores/auth';
 
 const loginSchema = z.object({
@@ -18,6 +19,7 @@ export function Login() {
   const login = useAuthStore((s) => s.login);
   const loading = useAuthStore((s) => s.loading);
   const error = useAuthStore((s) => s.error);
+  const hydrated = useAuthStore((s) => s.hydrated);
   const isAuth = useAuthStore((s) => s.isAuthenticated());
   const navigate = useNavigate();
   const location = useLocation();
@@ -28,6 +30,9 @@ export function Login() {
     formState: { errors },
   } = useForm<LoginForm>({ resolver: zodResolver(loginSchema) });
 
+  // Só confia no user do localStorage depois do /auth/me — senão a UI parece
+  // logada com cookie morto e todas as APIs respondem 401.
+  if (!hydrated) return <PageSpinner />;
   if (isAuth) {
     const destino = (location.state as { from?: string } | null)?.from ?? '/';
     return <Navigate to={destino} replace />;

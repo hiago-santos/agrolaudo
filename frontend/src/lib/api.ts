@@ -1,4 +1,5 @@
-export const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000';
+/** Em dev, default `/api` (proxy do Vite). Em build, exige VITE_API_URL absoluto. */
+export const API_URL = import.meta.env.VITE_API_URL ?? (import.meta.env.DEV ? '/api' : '');
 
 export class ApiError extends Error {
   status: number;
@@ -28,15 +29,21 @@ async function parseErrorBody(res: Response): Promise<ErrorBody> {
   }
 }
 
+function mergeHeaders(init?: HeadersInit, json = true): Headers {
+  const headers = new Headers(init);
+  if (json && !headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
+  }
+  return headers;
+}
+
 /** Wrapper de fetch para JSON — `credentials: 'include'` manda o cookie httpOnly de sessão. */
 export async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const { headers: optionHeaders, ...rest } = options;
   const res = await fetch(`${API_URL}${path}`, {
+    ...rest,
     credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(options.headers ?? {}),
-    },
-    ...options,
+    headers: mergeHeaders(optionHeaders, true),
   });
 
   if (!res.ok) {
@@ -94,3 +101,4 @@ export async function apiUpload<T>(path: string, file: File): Promise<T> {
   }
   return (await res.json()) as T;
 }
+

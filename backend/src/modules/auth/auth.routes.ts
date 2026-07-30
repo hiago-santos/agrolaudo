@@ -21,13 +21,17 @@ const authRoutes: FastifyPluginAsyncZod = async (app) => {
         { expiresIn: DURACAO_SESSAO_SEGUNDOS },
       );
 
+      // Em produção o frontend costuma estar em outro domínio (cross-site): Lax
+      // não manda o cookie no XHR — login "funciona" (user no JSON) e o resto dá 401.
+      const crossSite = process.env.NODE_ENV === 'production';
       reply.setCookie(COOKIE_NAME, token, {
         path: '/',
         httpOnly: true,
-        sameSite: 'lax',
-        secure: process.env.NODE_ENV === 'production',
+        sameSite: crossSite ? 'none' : 'lax',
+        secure: crossSite,
         maxAge: DURACAO_SESSAO_SEGUNDOS,
       });
+
 
       return {
         user: {
@@ -42,9 +46,15 @@ const authRoutes: FastifyPluginAsyncZod = async (app) => {
   );
 
   app.post('/logout', { schema: { tags: ['auth'] } }, async (_request, reply) => {
-    reply.clearCookie(COOKIE_NAME, { path: '/' });
+    const crossSite = process.env.NODE_ENV === 'production';
+    reply.clearCookie(COOKIE_NAME, {
+      path: '/',
+      sameSite: crossSite ? 'none' : 'lax',
+      secure: crossSite,
+    });
     return { ok: true };
   });
+
 
   app.get(
     '/me',
