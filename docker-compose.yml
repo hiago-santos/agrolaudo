@@ -1,0 +1,46 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: agrolaudo_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: agrolaudo_admin
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-agrolaudo_dev}
+      POSTGRES_DB: agrolaudo_db
+    ports:
+      # 5433 no host: evita conflito com um PostgreSQL nativo já rodando na 5432.
+      - '5433:5432'
+    volumes:
+      - agrolaudo_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U agrolaudo_admin -d agrolaudo_db']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ./backend
+    container_name: agrolaudo_api
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://agrolaudo_admin:${POSTGRES_PASSWORD:-agrolaudo_dev}@db:5432/agrolaudo_db?schema=public
+      JWT_SECRET: ${JWT_SECRET:-dev-only-change-me}
+      COOKIE_SECRET: ${COOKIE_SECRET:-dev-only-change-me-too}
+      PORT: 8000
+      HOST: 0.0.0.0
+      NODE_ENV: production
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
+      PUBLIC_APP_URL: ${PUBLIC_APP_URL:-http://localhost:5173}
+    ports:
+      - '8000:8000'
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  agrolaudo_postgres_data:
+
+# O frontend NÃO sobe aqui em dev: rode `pnpm dev` dentro de frontend/ apontando
+# VITE_API_URL para http://localhost:8000. Um Dockerfile de produção do frontend
+# (build estático + nginx) pode ser adicionado quando o deploy for definido.

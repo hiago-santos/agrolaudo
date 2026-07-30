@@ -1,0 +1,135 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-bg: var(--bg);
+  --color-bg-subtle: var(--bg-subtle);
+  --color-surface: var(--surface);
+  --color-surface-hover: var(--surface-hover);
+
+  --color-text: var(--text);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-ring: var(--accent-ring);
+
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+}
+
+:root {
+  --bg: #f6f7f9;
+  --bg-subtle: #f0f1f4;
+  --surface: #ffffff;
+  --surface-hover: #f8faff;
+
+  --text: #101828;
+  --text-secondary: #475467;
+  --text-tertiary: #98a2b3;
+
+  --border: rgba(18, 25, 38, 0.08);
+  --border-strong: rgba(18, 25, 38, 0.14);
+
+  /* Verde institucional agrobancário (aprovado com o cliente na conversa do Gemini) */
+  --accent: #1e4d2b;
+  --accent-hover: #163b21;
+  --accent-soft: rgba(30, 77, 43, 0.1);
+  --accent-ring: rgba(30, 77, 43, 0.22);
+
+  --success: #12b76a;
+  --success-soft: rgba(18, 183, 106, 0.1);
+  --warning: #f79009;
+  --warning-soft: rgba(247, 144, 9, 0.11);
+  --danger: #f04438;
+  --danger-soft: rgba(240, 68, 56, 0.09);
+}
+
+:root[data-theme='dark'] {
+  --bg: #0b0f0c;
+  --bg-subtle: #10150f;
+  --surface: #161c17;
+  --surface-hover: #1b221c;
+
+  --text: #f5f7f5;
+  --text-secondary: #a4ada4;
+  --text-tertiary: #6c766d;
+
+  --border: rgba(245, 247, 245, 0.08);
+  --border-strong: rgba(245, 247, 245, 0.14);
+
+  --accent: #4ade80;
+  --accent-hover: #6ee89a;
+  --accent-soft: rgba(74, 222, 128, 0.12);
+  --accent-ring: rgba(74, 222, 128, 0.28);
+
+  --success: #34d399;
+  --success-soft: rgba(52, 211, 153, 0.12);
+  --warning: #fbbf24;
+  --warning-soft: rgba(251, 191, 36, 0.12);
+  --danger: #f87171;
+  --danger-soft: rgba(248, 113, 113, 0.12);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #0b0f0c;
+    --bg-subtle: #10150f;
+    --surface: #161c17;
+    --surface-hover: #1b221c;
+
+    --text: #f5f7f5;
+    --text-secondary: #a4ada4;
+    --text-tertiary: #6c766d;
+
+    --border: rgba(245, 247, 245, 0.08);
+    --border-strong: rgba(245, 247, 245, 0.14);
+
+    --accent: #4ade80;
+    --accent-hover: #6ee89a;
+    --accent-soft: rgba(74, 222, 128, 0.12);
+    --accent-ring: rgba(74, 222, 128, 0.28);
+
+    --success: #34d399;
+    --success-soft: rgba(52, 211, 153, 0.12);
+    --warning: #fbbf24;
+    --warning-soft: rgba(251, 191, 36, 0.12);
+    --danger: #f87171;
+    --danger-soft: rgba(248, 113, 113, 0.12);
+  }
+}
+
+* {
+  border-color: var(--border);
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  font-family:
+    'Inter',
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    sans-serif;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
