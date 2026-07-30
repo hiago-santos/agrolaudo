@@ -33,7 +33,10 @@ const authRoutes: FastifyPluginAsyncZod = async (app) => {
       });
 
 
+      // `token` no body: o frontend manda Authorization Bearer (cookie httpOnly
+      // sozinho falha em cross-origin / alguns browsers — login 200 e resto 401).
       return {
+        token,
         user: {
           id: user.id,
           nome: user.nome,

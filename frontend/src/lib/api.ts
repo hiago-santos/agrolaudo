@@ -1,3 +1,5 @@
+import { getAccessToken } from '@/lib/authToken';
+
 /** Em dev, default `/api` (proxy do Vite). Em build, exige VITE_API_URL absoluto. */
 export const API_URL = import.meta.env.VITE_API_URL ?? (import.meta.env.DEV ? '/api' : '');
 
@@ -29,22 +31,30 @@ async function parseErrorBody(res: Response): Promise<ErrorBody> {
   }
 }
 
-function mergeHeaders(init?: HeadersInit, json = true): Headers {
+function buildHeaders(init?: HeadersInit, json = true): Headers {
   const headers = new Headers(init);
   if (json && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json');
   }
+  const token = getAccessToken();
+  if (token && !headers.has('Authorization')) {
+    headers.set('Authorization', `Bearer ${token}`);
+  }
   return headers;
 }
 
-/** Wrapper de fetch para JSON — `credentials: 'include'` manda o cookie httpOnly de sessão. */
-export async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
+async function request(path: string, options: RequestInit = {}, jsonContentType = true): Promise<Response> {
   const { headers: optionHeaders, ...rest } = options;
-  const res = await fetch(`${API_URL}${path}`, {
+  return fetch(`${API_URL}${path}`, {
     ...rest,
     credentials: 'include',
-    headers: mergeHeaders(optionHeaders, true),
+    headers: buildHeaders(optionHeaders, jsonContentType),
   });
+}
+
+/** Wrapper de fetch para JSON — Bearer (se houver) + cookie httpOnly. */
+export async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const res = await request(path, options, true);
 
   if (!res.ok) {
     const body = await parseErrorBody(res);
@@ -62,7 +72,7 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
 
 /** Downloads binários (XLSX/PDF) — devolve o Blob e o nome sugerido pelo servidor. */
 export async function apiDownload(path: string): Promise<{ blob: Blob; filename: string }> {
-  const res = await fetch(`${API_URL}${path}`, { credentials: 'include' });
+  const res = await request(path, {}, false);
   if (!res.ok) {
     const body = await parseErrorBody(res);
     throw new ApiError(res.status, body.message ?? res.statusText, body.error);
@@ -90,15 +100,10 @@ export function baixarBlob(blob: Blob, filename: string): void {
 export async function apiUpload<T>(path: string, file: File): Promise<T> {
   const formData = new FormData();
   formData.append('file', file);
-  const res = await fetch(`${API_URL}${path}`, {
-    method: 'POST',
-    credentials: 'include',
-    body: formData,
-  });
+  const res = await request(path, { method: 'POST', body: formData }, false);
   if (!res.ok) {
     const body = await parseErrorBody(res);
     throw new ApiError(res.status, body.message ?? res.statusText, body.error);
   }
   return (await res.json()) as T;
 }
-
