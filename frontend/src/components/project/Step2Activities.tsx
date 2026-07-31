@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { Checkbox } from '@/components/ui/Checkbox';
 import { Label } from '@/components/ui/Input';
 import { Skeleton, SkeletonText } from '@/components/ui/Skeleton';
 import { Spinner } from '@/components/ui/Spinner';
@@ -168,15 +169,13 @@ export function Step2Activities({ draft, onChange, onNext, onBack }: Step2Props)
                 {group.items.map((item) => (
                   <label
                     key={item.activity.id}
-                    className="flex cursor-pointer items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm has-[:checked]:border-accent/40 has-[:checked]:bg-accent-soft"
+                    className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-border px-3 py-2.5 text-sm transition-colors hover:bg-bg-subtle/60 has-[:checked]:border-accent/40 has-[:checked]:bg-accent-soft"
                   >
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       checked={item.selected}
                       onChange={() => toggleSelection(item.activity.id)}
-                      className="h-4 w-4 rounded border-border-strong text-accent focus:ring-accent-ring"
                     />
-                    {item.activity.name}
+                    <span className="min-w-0 leading-snug text-text">{item.activity.name}</span>
                   </label>
                 ))}
               </div>

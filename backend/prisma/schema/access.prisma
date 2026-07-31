@@ -14,6 +14,7 @@ model User {
   role         UserRole @default(AGRONOMIST)
   active       Boolean  @default(true)
   agronomist   Agronomist?
+  refreshTokens RefreshToken[]
 
   /// Projetos que este usuário (papel BANK) decidiu (aprovou/reprovou).
   reviewedProjects Project[] @relation("BankReviewer")
@@ -22,6 +23,21 @@ model User {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("users")
+}
+
+/// Token opaco de renovação — só o hash fica persistido; o valor cru vai para o cliente.
+model RefreshToken {
+  id        String    @id @default(uuid(7)) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  revokedAt DateTime? @map("revoked_at")
+  remember  Boolean   @default(false)
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@map("refresh_tokens")
 }
 
 /// Perfil do Engenheiro Agrônomo que assina os projetos. 1:1 com um User de role AGRONOMIST.

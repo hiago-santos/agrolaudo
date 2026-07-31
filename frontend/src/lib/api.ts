@@ -1,4 +1,11 @@
-import { getAccessToken } from '@/lib/authToken';
+import {
+  accessTokenNeedsRefresh,
+  getAccessToken,
+  getRefreshToken,
+  setAccessToken,
+  setRefreshToken,
+  clearAuthTokens,
+} from '@/lib/authToken';
 
 export const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000';
 
@@ -22,6 +29,16 @@ interface ErrorBody {
   issues?: unknown;
 }
 
+type RefreshListener = (session: { accessToken: string; refreshToken: string; expiresIn: number; rememberMe: boolean } | null) => void;
+
+let refreshPromise: Promise<boolean> | null = null;
+let onSessionRefreshed: RefreshListener | null = null;
+
+/** O store de auth registra um listener para sincronizar user/tokens após o refresh. */
+export function setAuthRefreshListener(listener: RefreshListener | null): void {
+  onSessionRefreshed = listener;
+}
+
 async function parseErrorBody(res: Response): Promise<ErrorBody> {
   try {
     return (await res.json()) as ErrorBody;
@@ -42,15 +59,95 @@ function buildHeaders(init?: HeadersInit, json = true): Headers {
   return headers;
 }
 
-async function request(path: string, options: RequestInit = {}, jsonContentType = true): Promise<Response> {
-  const { headers: optionHeaders, ...rest } = options;
-  return fetch(`${API_URL}${path}`, {
-    ...rest,
-    headers: buildHeaders(optionHeaders, jsonContentType),
-  });
+async function refreshSession(): Promise<boolean> {
+  if (refreshPromise) return refreshPromise;
+
+  refreshPromise = (async () => {
+    const currentRefresh = getRefreshToken();
+    if (!currentRefresh) {
+      clearAuthTokens();
+      onSessionRefreshed?.(null);
+      return false;
+    }
+
+    try {
+      const res = await fetch(`${API_URL}/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Skip-Auth-Refresh': '1' },
+        body: JSON.stringify({ refreshToken: currentRefresh }),
+      });
+
+      if (!res.ok) {
+        clearAuthTokens();
+        onSessionRefreshed?.(null);
+        return false;
+      }
+
+      const data = (await res.json()) as {
+        accessToken: string;
+        refreshToken: string;
+        expiresIn: number;
+        rememberMe: boolean;
+      };
+
+      setAccessToken(data.accessToken, data.expiresIn);
+      setRefreshToken(data.refreshToken, data.rememberMe);
+      onSessionRefreshed?.(data);
+      return true;
+    } catch {
+      clearAuthTokens();
+      onSessionRefreshed?.(null);
+      return false;
+    } finally {
+      refreshPromise = null;
+    }
+  })();
+
+  return refreshPromise;
 }
 
-/** Wrapper de fetch para JSON — sempre Bearer (se houver) no header `Authorization`. */
+async function ensureFreshAccessToken(skipRefresh: boolean): Promise<void> {
+  if (skipRefresh) return;
+  if (!getRefreshToken()) return;
+  if (!accessTokenNeedsRefresh()) return;
+  await refreshSession();
+}
+
+async function request(path: string, options: RequestInit = {}, jsonContentType = true): Promise<Response> {
+  const { headers: optionHeaders, ...rest } = options;
+  const headers = buildHeaders(optionHeaders, jsonContentType);
+  const skipRefresh = headers.get('X-Skip-Auth-Refresh') === '1';
+  headers.delete('X-Skip-Auth-Refresh');
+
+  await ensureFreshAccessToken(skipRefresh);
+
+  // Reaplica o Bearer após um possível refresh.
+  const token = getAccessToken();
+  if (token) headers.set('Authorization', `Bearer ${token}`);
+
+  let res = await fetch(`${API_URL}${path}`, {
+    ...rest,
+    headers,
+  });
+
+  if (res.status === 401 && !skipRefresh && getRefreshToken()) {
+    const refreshed = await refreshSession();
+    if (refreshed) {
+      const retryHeaders = buildHeaders(optionHeaders, jsonContentType);
+      retryHeaders.delete('X-Skip-Auth-Refresh');
+      const retryToken = getAccessToken();
+      if (retryToken) retryHeaders.set('Authorization', `Bearer ${retryToken}`);
+      res = await fetch(`${API_URL}${path}`, {
+        ...rest,
+        headers: retryHeaders,
+      });
+    }
+  }
+
+  return res;
+}
+
+/** Wrapper de fetch para JSON — Bearer automático + refresh em 401. */
 export async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
   const res = await request(path, options, true);
 

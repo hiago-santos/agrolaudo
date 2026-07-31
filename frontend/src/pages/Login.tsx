@@ -3,15 +3,17 @@ import { useForm } from 'react-hook-form';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 
-import { Button } from '@/components/ui/Button';
-import { FieldError, Input, Label } from '@/components/ui/Input';
 import { BootScreen } from '@/components/ui/BootScreen';
+import { Button } from '@/components/ui/Button';
+import { Checkbox } from '@/components/ui/Checkbox';
+import { FieldError, Input, Label } from '@/components/ui/Input';
 import { Seal } from '@/components/ui/Seal';
 import { useAuthStore } from '@/stores/auth';
 
 const loginSchema = z.object({
   email: z.string().email('Informe um e-mail válido.'),
   password: z.string().min(1, 'Informe a senha.'),
+  rememberMe: z.boolean(),
 });
 type LoginForm = z.infer<typeof loginSchema>;
 
@@ -20,6 +22,7 @@ export function Login() {
   const loading = useAuthStore((s) => s.loading);
   const error = useAuthStore((s) => s.error);
   const hydrated = useAuthStore((s) => s.hydrated);
+  const remembered = useAuthStore((s) => s.rememberMe);
   const isAuth = useAuthStore((s) => s.isAuthenticated());
   const navigate = useNavigate();
   const location = useLocation();
@@ -28,7 +31,10 @@ export function Login() {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<LoginForm>({ resolver: zodResolver(loginSchema) });
+  } = useForm<LoginForm>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { rememberMe: remembered },
+  });
 
   if (!hydrated) return <BootScreen />;
   if (isAuth) {
@@ -37,7 +43,7 @@ export function Login() {
   }
 
   async function onSubmit(data: LoginForm) {
-    const ok = await login(data.email, data.password);
+    const ok = await login(data.email, data.password, data.rememberMe);
     if (ok) navigate('/', { replace: true });
   }
 
@@ -96,6 +102,11 @@ export function Login() {
             <Input id="password" type="password" autoComplete="current-password" {...register('password')} />
             <FieldError>{errors.password?.message}</FieldError>
           </div>
+
+          <label className="flex cursor-pointer items-center gap-2.5 text-sm text-text-secondary">
+            <Checkbox {...register('rememberMe')} />
+            <span>Lembrar-me neste dispositivo</span>
+          </label>
 
           {error && (
             <p className="rounded-md border border-danger/30 bg-danger-soft px-3 py-2 text-xs text-danger">

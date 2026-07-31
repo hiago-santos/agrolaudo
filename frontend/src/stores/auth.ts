@@ -1,87 +1,125 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
-import { ApiError } from '@/lib/api';
-import { setAccessToken } from '@/lib/authToken';
+import { ApiError, setAuthRefreshListener } from '@/lib/api';
+import {
+  clearAuthTokens,
+  getAccessToken,
+  getRefreshToken,
+  getRememberMe,
+  setAccessToken,
+  setRefreshToken,
+} from '@/lib/authToken';
 import { authService } from '@/services/auth';
 import type { User } from '@/types/domain';
 
 interface AuthState {
   user: User | null;
-  token: string | null;
   loading: boolean;
   hydrated: boolean;
   error: string | null;
+  rememberMe: boolean;
   isAuthenticated: () => boolean;
   hasRole: (...roles: User['role'][]) => boolean;
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string, rememberMe: boolean) => Promise<boolean>;
   logout: () => Promise<void>;
   hydrateFromSession: () => Promise<void>;
+}
+
+function applySession(session: {
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
+  rememberMe: boolean;
+  user?: User;
+}) {
+  setAccessToken(session.accessToken, session.expiresIn);
+  setRefreshToken(session.refreshToken, session.rememberMe);
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
       user: null,
-      token: null,
       loading: false,
       hydrated: false,
       error: null,
+      rememberMe: getRememberMe(),
 
-      isAuthenticated: () => !!get().user && !!get().token,
+      isAuthenticated: () => !!get().user && (!!getAccessToken() || !!getRefreshToken()),
       hasRole: (...roles) => {
         const role = get().user?.role;
         return !!role && roles.includes(role);
       },
 
-      login: async (email, password) => {
+      login: async (email, password, rememberMe) => {
         set({ loading: true, error: null });
         try {
-          const { user, token } = await authService.login(email, password);
-          setAccessToken(token);
-          set({ user, token, loading: false });
+          const session = await authService.login(email, password, rememberMe);
+          applySession(session);
+          set({ user: session.user, rememberMe: session.rememberMe, loading: false });
           return true;
         } catch (e: unknown) {
           const message = e instanceof ApiError ? e.message : 'Falha ao entrar. Tente novamente.';
-          setAccessToken(null);
-          set({ error: message, loading: false, user: null, token: null });
+          clearAuthTokens();
+          set({ error: message, loading: false, user: null });
           return false;
         }
       },
 
       logout: async () => {
+        const refreshToken = getRefreshToken();
         try {
-          await authService.logout();
+          await authService.logout(refreshToken);
         } finally {
-          setAccessToken(null);
-          set({ user: null, token: null });
+          clearAuthTokens();
+          set({ user: null, rememberMe: false });
         }
       },
 
       hydrateFromSession: async () => {
         set({ loading: true });
-        // Restaura o Bearer do persist antes do /me — sem token, a API responde 401.
-        setAccessToken(get().token);
-        if (!get().token) {
-          set({ user: null, loading: false, hydrated: true });
+        const refreshToken = getRefreshToken();
+        if (!refreshToken) {
+          clearAuthTokens();
+          set({ user: null, loading: false, hydrated: true, rememberMe: false });
           return;
         }
-        const user = await authService.me().catch(() => null);
-        if (!user) {
-          setAccessToken(null);
-          set({ user: null, token: null, loading: false, hydrated: true });
-          return;
+
+        try {
+          // Troca o refresh por um access fresco (e rotaciona o refresh).
+          const session = await authService.refresh(refreshToken);
+          applySession(session);
+          const user = session.user ?? (await authService.me());
+          set({
+            user,
+            rememberMe: session.rememberMe,
+            loading: false,
+            hydrated: true,
+          });
+        } catch {
+          clearAuthTokens();
+          set({ user: null, loading: false, hydrated: true, rememberMe: false });
         }
-        set({ user, loading: false, hydrated: true });
       },
     }),
     {
       name: 'agrolaudo-auth',
       storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({ user: state.user, token: state.token }),
-      onRehydrateStorage: () => (state) => {
-        if (state?.token) setAccessToken(state.token);
-      },
+      // Perfil só persiste com "lembrar-me"; tokens ficam em authToken.
+      partialize: (state) => ({
+        user: state.rememberMe ? state.user : null,
+        rememberMe: state.rememberMe,
+      }),
     },
   ),
 );
+
+// Mantém o store alinhado quando o api.ts renova a sessão em background.
+setAuthRefreshListener((session) => {
+  if (!session) {
+    useAuthStore.setState({ user: null, rememberMe: false });
+    return;
+  }
+  useAuthStore.setState({ rememberMe: session.rememberMe });
+});

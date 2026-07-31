@@ -25,7 +25,8 @@ async function login(app: FastifyInstance, email: string, password: string): Pro
       `Login de teste falhou para ${email} — rode \`pnpm db:seed\` antes de \`pnpm test:integration\`.`,
     );
   }
-  return (res.json() as { token: string }).token;
+  const body = res.json() as { accessToken?: string; token?: string };
+  return body.accessToken ?? body.token ?? '';
 }
 
 function bearer(token: string) {

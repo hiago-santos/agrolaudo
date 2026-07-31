@@ -21,11 +21,17 @@ interface Step1Props {
   onNext: () => void;
 }
 
+/** Busca vazia/inicial sem atraso; digitação com debounce curto. */
+function searchDelay(value: string): number {
+  return value.trim() ? 250 : 0;
+}
+
 export function Step1ProducerSelection({ draft, onChange, onNext }: Step1Props) {
   const user = useAuthStore((s) => s.user);
   const [search, setSearch] = useState('');
   const [results, setResults] = useState<Producer[]>([]);
   const [searching, setSearching] = useState(false);
+  const [listOpen, setListOpen] = useState(false);
   const [seasons, setSeasons] = useState<Season[]>([]);
   const [agronomists, setAgronomists] = useState<Agronomist[]>([]);
   const [newProducerOpen, setNewProducerOpen] = useState(false);
@@ -33,6 +39,7 @@ export function Step1ProducerSelection({ draft, onChange, onNext }: Step1Props) 
   const [highlighted, setHighlighted] = useState(0);
   const listboxId = 'producer-search-results';
   const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const comboboxRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     void seasonsService.list().then((list) => {
@@ -48,23 +55,37 @@ export function Step1ProducerSelection({ draft, onChange, onNext }: Step1Props) 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Lista todos ao abrir; filtra com debounce conforme digita.
   useEffect(() => {
-    if (!search.trim()) {
-      setResults([]);
-      return;
-    }
+    if (draft.producer || !listOpen) return;
+
     setSearching(true);
     const timeout = setTimeout(() => {
+      const term = search.trim();
       producersService
-        .list({ search, pageSize: 8 })
+        .list({ search: term || undefined, pageSize: 50 })
         .then((r) => {
           setResults(r.items);
           setHighlighted(0);
         })
         .finally(() => setSearching(false));
-    }, 300);
+    }, searchDelay(search));
+
     return () => clearTimeout(timeout);
-  }, [search]);
+  }, [search, listOpen, draft.producer]);
+
+  useEffect(() => {
+    if (!listOpen) return;
+
+    function onPointerDown(event: MouseEvent) {
+      if (!comboboxRef.current?.contains(event.target as Node)) {
+        setListOpen(false);
+      }
+    }
+
+    document.addEventListener('mousedown', onPointerDown);
+    return () => document.removeEventListener('mousedown', onPointerDown);
+  }, [listOpen]);
 
   function selectProducer(producer: Producer) {
     onChange({
@@ -73,13 +94,17 @@ export function Step1ProducerSelection({ draft, onChange, onNext }: Step1Props) 
     });
     setSearch('');
     setResults([]);
+    setListOpen(false);
   }
 
   function onSearchKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
-    if (results.length === 0) return;
-
     if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
       event.preventDefault();
+      if (!listOpen) {
+        setListOpen(true);
+        return;
+      }
+      if (results.length === 0) return;
       const offset = event.key === 'ArrowDown' ? 1 : -1;
       const next = (highlighted + offset + results.length) % results.length;
       setHighlighted(next);
@@ -89,7 +114,7 @@ export function Step1ProducerSelection({ draft, onChange, onNext }: Step1Props) 
 
     if (event.key === 'Enter') {
       const producer = results[highlighted];
-      if (producer) {
+      if (listOpen && producer) {
         event.preventDefault();
         selectProducer(producer);
       }
@@ -97,8 +122,7 @@ export function Step1ProducerSelection({ draft, onChange, onNext }: Step1Props) 
     }
 
     if (event.key === 'Escape') {
-      setResults([]);
-      setSearch('');
+      setListOpen(false);
     }
   }
 
@@ -122,35 +146,42 @@ export function Step1ProducerSelection({ draft, onChange, onNext }: Step1Props) 
             </Button>
           </div>
         ) : (
-          <div className="space-y-2">
+          <div ref={comboboxRef} className="space-y-2">
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-tertiary" />
               <Input
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setListOpen(true);
+                }}
+                onFocus={() => setListOpen(true)}
                 onKeyDown={onSearchKeyDown}
-                placeholder="Buscar por nome ou CPF/CNPJ..."
+                placeholder="Buscar ou selecionar produtor..."
                 className="pl-9"
                 role="combobox"
-                aria-expanded={!!search}
+                aria-expanded={listOpen}
                 aria-controls={listboxId}
                 aria-autocomplete="list"
               />
             </div>
-            {search && (
+            {listOpen && (
               <div
                 id={listboxId}
                 role="listbox"
-                className="animate-menu-in overflow-hidden rounded-md border border-border bg-surface"
+                className="animate-menu-in max-h-64 overflow-y-auto overflow-x-hidden rounded-md border border-border bg-surface"
               >
                 {searching && (
                   <div className="space-y-2 p-3">
                     <Skeleton className="h-4 w-2/3" />
                     <Skeleton className="h-4 w-1/2" />
+                    <Skeleton className="h-4 w-3/5" />
                   </div>
                 )}
                 {!searching && results.length === 0 && (
-                  <p className="p-3 text-xs text-text-secondary">Nenhum produtor encontrado.</p>
+                  <p className="p-3 text-xs text-text-secondary">
+                    {search.trim() ? 'Nenhum produtor encontrado.' : 'Nenhum produtor cadastrado ainda.'}
+                  </p>
                 )}
                 {!searching &&
                   results.map((producer, index) => (
@@ -169,7 +200,15 @@ export function Step1ProducerSelection({ draft, onChange, onNext }: Step1Props) 
                         index === highlighted ? 'bg-accent-soft text-accent' : 'hover:bg-bg-subtle',
                       )}
                     >
-                      <span className="truncate font-medium text-text">{producer.name}</span>
+                      <span className="min-w-0 truncate">
+                        <span className="block truncate font-medium text-text">{producer.name}</span>
+                        <span className="block truncate text-xs text-text-tertiary">
+                          {producer.city}-{producer.state}
+                          {producer.properties.length > 0
+                            ? ` · ${producer.properties.length} propriedade${producer.properties.length === 1 ? '' : 's'}`
+                            : ''}
+                        </span>
+                      </span>
                       <span className="shrink-0 font-mono text-xs text-text-secondary">{producer.taxId}</span>
                     </button>
                   ))}
