@@ -1,4 +1,4 @@
-import { FileStack, FolderOpen, LayoutDashboard, ListChecks, Users, X } from 'lucide-react';
+import { FolderOpen, LayoutDashboard, ListChecks, Users, X } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 
 import { Seal } from '@/components/ui/Seal';
@@ -7,10 +7,9 @@ import { useAuthStore } from '@/stores/auth';
 
 export const NAV_ITEMS = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
-  { to: '/projects/new', label: 'Novo Projeto', icon: FileStack, hideForRoles: ['BANK'] as const },
+  { to: '/projects', label: 'Projetos', icon: FolderOpen, end: true },
   { to: '/prices', label: 'Preços & Custos', icon: ListChecks, hideForRoles: ['BANK'] as const },
   { to: '/producers', label: 'Produtores', icon: Users },
-  { to: '/projects', label: 'Projetos', icon: FolderOpen, end: true },
 ];
 
 interface SidebarProps {
