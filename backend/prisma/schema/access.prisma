@@ -1,0 +1,45 @@
+// ─────────────────────────── Access ───────────────────────────
+
+enum UserRole {
+  ADMIN
+  AGRONOMIST
+  BANK
+}
+
+model User {
+  id           String   @id @default(uuid(7)) @db.Uuid
+  name         String
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  role         UserRole @default(AGRONOMIST)
+  active       Boolean  @default(true)
+  agronomist   Agronomist?
+
+  /// Projetos que este usuário (papel BANK) decidiu (aprovou/reprovou).
+  reviewedProjects Project[] @relation("BankReviewer")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+/// Perfil do Engenheiro Agrônomo que assina os projetos. 1:1 com um User de role AGRONOMIST.
+model Agronomist {
+  id                     String  @id @default(uuid(7)) @db.Uuid
+  userId                 String  @unique @map("user_id") @db.Uuid
+  user                   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name                   String
+  document               String  @unique
+  licenseNumber          String  @map("license_number")
+  region                 String?
+  issuingCity            String  @map("issuing_city")
+  defaultSignatureBase64 String? @map("default_signature_base64")
+
+  projects Project[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("agronomists")
+}

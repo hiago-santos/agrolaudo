@@ -35,21 +35,21 @@ export function Dialog({ open, onClose, title, description, children, maxWidthCl
         type="button"
         aria-label="Fechar"
         onClick={onClose}
-        className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"
+        className="absolute inset-0 bg-black/50"
       />
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="dialog-title"
         className={cn(
-          'relative z-10 w-full max-h-[85vh] overflow-y-auto rounded-2xl border border-border bg-surface p-6 shadow-2xl',
-          'animate-in fade-in zoom-in-95',
+          'relative z-10 w-full max-h-[85vh] overflow-y-auto rounded-lg border border-border-strong bg-surface p-6',
+          'animate-page-enter',
           maxWidthClassName ?? 'max-w-lg',
         )}
       >
         <div className="mb-4 flex items-start justify-between gap-4">
           <div>
-            <h2 id="dialog-title" className="text-base font-semibold text-text">
+            <h2 id="dialog-title" className="font-display text-base font-semibold text-text">
               {title}
             </h2>
             {description && <p className="mt-1 text-sm text-text-secondary">{description}</p>}

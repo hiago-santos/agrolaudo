@@ -1,0 +1,49 @@
+// ─────────────────────────── Atividades e cotações ───────────────────────────
+
+enum ActivityCategory {
+  GRAINS_FIBERS
+  PERMANENT_FRUIT
+  SEMI_PERMANENT
+  LIVESTOCK_PASTURE
+}
+
+/// As 15 atividades mapeadas com o cliente. Espelha o catálogo estático de
+/// backend/src/core/activities.ts — o seed importa de lá para não duplicar dados.
+model Activity {
+  id           String           @id @default(uuid(7)) @db.Uuid
+  slug         String           @unique
+  name         String
+  category     ActivityCategory
+  defaultUnit  String           @map("default_unit")
+  allowedUnits String[]         @map("allowed_units")
+  isLivestock  Boolean          @default(false) @map("is_livestock")
+  active       Boolean          @default(true)
+  order        Int              @default(0)
+
+  priceQuotes  PriceQuote[]
+  projectItems ProjectItem[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("activities")
+}
+
+/// Append-only: atualizar um preço insere uma linha nova em vez de sobrescrever —
+/// dá o histórico de cotações de graça e nunca altera um projeto já emitido.
+model PriceQuote {
+  id             String   @id @default(uuid(7)) @db.Uuid
+  activityId     String   @map("activity_id") @db.Uuid
+  activity       Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  unit           String
+  unitPrice      Decimal  @map("unit_price") @db.Decimal(18, 4)
+  costPerHectare Decimal  @map("cost_per_hectare") @db.Decimal(18, 4)
+  region         String?
+  effectiveFrom  DateTime @default(now()) @map("effective_from")
+  createdById    String?  @map("created_by_id") @db.Uuid
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([activityId, effectiveFrom])
+  @@map("price_quotes")
+}

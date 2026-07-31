@@ -1,6 +1,6 @@
 import { api } from '@/lib/api';
-import type { DashboardResumo } from '@/types/domain';
+import type { DashboardSummary } from '@/types/domain';
 
 export const dashboardService = {
-  resumo: () => api<DashboardResumo>('/dashboard/resumo'),
+  summary: () => api<DashboardSummary>('/dashboard/summary'),
 };

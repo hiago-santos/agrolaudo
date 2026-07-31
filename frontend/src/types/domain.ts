@@ -1,197 +1,209 @@
-export type RoleUsuario = 'ADMIN' | 'AGRONOMO' | 'BANCO';
-export type ClassificacaoProdutor = 'PRONAF' | 'PRONAMP' | 'DEMAIS';
-export type CategoriaAtividade =
-  | 'GRAOS_FIBRAS'
-  | 'PERMANENTES_FRUTICULTURA'
-  | 'SEMIPERMANENTES'
-  | 'PECUARIA_PASTAGEM';
-export type StatusLaudo = 'RASCUNHO' | 'AGUARDANDO_ASSINATURA' | 'ASSINADO' | 'CANCELADO';
-export type TipoAssinatura = 'AGRONOMO' | 'PRODUTOR';
+export type UserRole = 'ADMIN' | 'AGRONOMIST' | 'BANK';
+export type ProducerClassification = 'PRONAF' | 'PRONAMP' | 'OTHER';
+export type ActivityCategory =
+  | 'GRAINS_FIBERS'
+  | 'PERMANENT_FRUIT'
+  | 'SEMI_PERMANENT'
+  | 'LIVESTOCK_PASTURE';
+export type ProjectStatus =
+  | 'DRAFT'
+  | 'PENDING_SIGNATURES'
+  | 'SIGNED'
+  | 'UNDER_BANK_REVIEW'
+  | 'APPROVED'
+  | 'REJECTED'
+  | 'CANCELLED';
+export type SignatureType = 'AGRONOMIST' | 'PRODUCER';
 
-export interface Agronomo {
+export interface Agronomist {
   id: string;
-  nome: string;
-  cpf: string;
-  crea: string;
-  regiao: string | null;
-  cidadeEmissao: string;
-  assinaturaPadraoBase64: string | null;
-  user?: { email: string; ativo: boolean };
+  name: string;
+  document: string;
+  licenseNumber: string;
+  region: string | null;
+  issuingCity: string;
+  defaultSignatureBase64: string | null;
+  user?: { email: string; active: boolean };
 }
 
 export interface User {
   id: string;
-  nome: string;
+  name: string;
   email: string;
-  role: RoleUsuario;
-  agronomo: Agronomo | null;
+  role: UserRole;
+  agronomist: Agronomist | null;
 }
 
-export interface Produtor {
+export interface Producer {
   id: string;
-  nome: string;
-  cpfCnpj: string;
-  telefone: string | null;
+  name: string;
+  taxId: string;
+  phone: string | null;
   email: string | null;
-  endereco: string | null;
-  municipio: string;
-  uf: string;
-  classificacao: ClassificacaoProdutor;
-  propriedades: Propriedade[];
+  address: string | null;
+  city: string;
+  state: string;
+  classification: ProducerClassification;
+  properties: Property[];
 }
 
-export interface Propriedade {
+export interface Property {
   id: string;
-  produtorId: string;
-  nome: string;
-  matricula: string;
-  municipio: string;
-  uf: string;
-  areaTotalHa: string;
-  inscricaoEstadual: string | null;
-  car: string | null;
+  producerId: string;
+  name: string;
+  registrationNumber: string;
+  city: string;
+  state: string;
+  totalAreaHectares: string;
+  stateRegistration: string | null;
+  ruralEnvironmentalRegistry: string | null;
   latitude: string | null;
   longitude: string | null;
-  produtor?: { id: string; nome: string; cpfCnpj: string };
+  producer?: { id: string; name: string; taxId: string };
 }
 
-export interface Atividade {
+export interface Activity {
   id: string;
   slug: string;
-  nome: string;
-  categoria: CategoriaAtividade;
-  unidadePadrao: string;
-  unidadesPermitidas: string[];
-  pecuaria: boolean;
-  ativo: boolean;
-  ordem: number;
+  name: string;
+  category: ActivityCategory;
+  defaultUnit: string;
+  allowedUnits: string[];
+  isLivestock: boolean;
+  active: boolean;
+  order: number;
 }
 
-export interface CotacaoRef {
+export interface PriceQuote {
   id: string;
-  atividadeId: string;
-  unidade: string;
-  precoUnitario: string;
-  custoPorHa: string;
-  regiao: string | null;
-  vigenteDesde: string;
+  activityId: string;
+  unit: string;
+  unitPrice: string;
+  costPerHectare: string;
+  region: string | null;
+  effectiveFrom: string;
 }
 
-export interface MatrizItem {
-  atividade: Atividade;
-  cotacaoAtual: CotacaoRef | null;
+export interface PriceMatrixItem {
+  activity: Activity;
+  currentQuote: PriceQuote | null;
 }
 
-export interface Safra {
+export interface Season {
   id: string;
-  rotulo: string;
-  inicio: string;
-  fim: string;
-  ativa: boolean;
+  label: string;
+  startDate: string;
+  endDate: string;
+  active: boolean;
 }
 
-export interface LaudoItem {
+export interface ProjectItem {
   id: string;
-  atividadeId: string;
-  atividadeNome: string;
-  unidade: string;
-  areaHa: string;
-  produtividade: string;
-  precoUnitario: string;
-  custoPorHa: string;
-  rebanhoCabecas: string | null;
-  producaoTotal: string;
-  faturamentoBruto: string;
-  custoTotal: string;
-  receitaLiquida: string;
-  produtividadePorHa: string | null;
-  taxaLotacao: string | null;
-  ordem: number;
+  activityId: string;
+  activityName: string;
+  unit: string;
+  areaHectares: string;
+  productivity: string;
+  unitPrice: string;
+  costPerHectare: string;
+  herdHeadCount: string | null;
+  totalProduction: string;
+  grossRevenue: string;
+  totalCost: string;
+  netProfit: string;
+  productivityPerHectare: string | null;
+  stockingRate: string | null;
+  order: number;
 }
 
-export interface Assinatura {
+export interface Signature {
   id: string;
-  tipo: TipoAssinatura;
-  nomeSignatario: string;
-  documento: string;
-  imagemBase64: string | null;
+  type: SignatureType;
+  signatoryName: string;
+  signatoryDocument: string;
+  imageBase64: string | null;
   hash: string | null;
-  assinadoEm: string | null;
+  signedAt: string | null;
   token?: string | null;
 }
 
-export interface LaudoResumo {
+export interface ProjectSummary {
   id: string;
-  numero: string;
-  status: StatusLaudo;
-  totalFaturamento: string;
-  totalCusto: string;
-  totalReceita: string;
-  margemPercentual: string;
+  number: string;
+  status: ProjectStatus;
+  totalRevenue: string;
+  totalCost: string;
+  totalProfit: string;
+  profitMarginPercentage: string;
   createdAt: string;
-  produtor: { id: string; nome: string; cpfCnpj: string };
-  propriedade: { id: string; nome: string; matricula: string };
-  safra: { id: string; rotulo: string };
-  agronomo: { id: string; nome: string; crea: string };
+  producer: { id: string; name: string; taxId: string };
+  property: { id: string; name: string; registrationNumber: string };
+  season: { id: string; label: string };
+  agronomist: { id: string; name: string; licenseNumber: string };
 }
 
-export interface Laudo extends LaudoResumo {
-  cidadeEmissao: string;
-  dataEmissao: string;
-  observacoes: string | null;
-  hashDocumento: string | null;
-  itens: LaudoItem[];
-  assinaturas: Assinatura[];
+export interface Project extends ProjectSummary {
+  issuingCity: string;
+  issueDate: string;
+  notes: string | null;
+  documentHash: string | null;
+  approvedCreditLimit: string | null;
+  bankNotes: string | null;
+  bankReviewedAt: string | null;
+  bankReviewer: { id: string; name: string; email: string } | null;
+  items: ProjectItem[];
+  signatures: Signature[];
 }
 
-export interface ItemLaudoCalculado {
-  atividadeId: string;
-  atividadeNome: string;
-  unidade: string;
-  areaHa: string;
-  produtividade: string;
-  precoUnitario: string;
-  custoPorHa: string;
-  producaoTotal: string;
-  faturamentoBruto: string;
-  custoTotal: string;
-  receitaLiquida: string;
-  produtividadePorHa: string | null;
-  taxaLotacao: string | null;
+export interface CalculatedProjectItem {
+  activityId: string;
+  activityName: string;
+  unit: string;
+  areaHectares: string;
+  productivity: string;
+  unitPrice: string;
+  costPerHectare: string;
+  totalProduction: string;
+  grossRevenue: string;
+  totalCost: string;
+  netProfit: string;
+  productivityPerHectare: string | null;
+  stockingRate: string | null;
 }
 
-export interface ConsolidadoCalculo {
-  totalFaturamento: string;
-  totalCusto: string;
-  totalReceita: string;
-  margemPercentual: string;
+export interface ConsolidatedCalculation {
+  totalRevenue: string;
+  totalCost: string;
+  totalProfit: string;
+  profitMarginPercentage: string;
 }
 
-export interface CalculoLaudoResultado {
-  itens: ItemLaudoCalculado[];
-  consolidado: ConsolidadoCalculo;
+export interface ProjectCalculationResult {
+  items: CalculatedProjectItem[];
+  consolidated: ConsolidatedCalculation;
 }
 
-export interface Paginado<T> {
+export interface Paginated<T> {
   items: T[];
   total: number;
   page: number;
   pageSize: number;
 }
 
-export interface DashboardResumo {
-  laudosNoMes: number;
-  aguardandoAssinatura: number;
-  produtoresAtivos: number;
-  faturamentoNoMes: string;
-  receitaNoMes: string;
-  ultimosLaudos: Array<{
+export interface DashboardSummary {
+  projectsThisMonth: number;
+  pendingSignaturesCount: number;
+  underBankReviewCount: number;
+  activeProducersCount: number;
+  revenueThisMonth: string;
+  profitThisMonth: string;
+  recentProjects: Array<{
     id: string;
-    numero: string;
-    status: StatusLaudo;
-    totalFaturamento: string;
+    number: string;
+    status: ProjectStatus;
+    totalRevenue: string;
     createdAt: string;
-    produtor: { nome: string };
-    propriedade: { nome: string };
+    producer: { name: string };
+    property: { name: string };
   }>;
 }

@@ -14,7 +14,7 @@ interface AuthState {
   error: string | null;
   isAuthenticated: () => boolean;
   hasRole: (...roles: User['role'][]) => boolean;
-  login: (email: string, senha: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
   hydrateFromSession: () => Promise<void>;
 }
@@ -34,10 +34,10 @@ export const useAuthStore = create<AuthState>()(
         return !!role && roles.includes(role);
       },
 
-      login: async (email, senha) => {
+      login: async (email, password) => {
         set({ loading: true, error: null });
         try {
-          const { user, token } = await authService.login(email, senha);
+          const { user, token } = await authService.login(email, password);
           setAccessToken(token);
           set({ user, token, loading: false });
           return true;
@@ -60,7 +60,7 @@ export const useAuthStore = create<AuthState>()(
 
       hydrateFromSession: async () => {
         set({ loading: true });
-        // Restaura Bearer do persist antes do /me (cookie sozinho pode não ir).
+        // Restaura o Bearer do persist antes do /me — sem token, a API responde 401.
         setAccessToken(get().token);
         if (!get().token) {
           set({ user: null, loading: false, hydrated: true });

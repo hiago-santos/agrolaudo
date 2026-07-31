@@ -1,14 +1,15 @@
-import { LogOut, Menu, User } from 'lucide-react';
+import { LogOut, Menu, Moon, Sun, User } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { cn } from '@/lib/cn';
 import { useAuthStore } from '@/stores/auth';
+import { useThemeStore } from '@/stores/theme';
 
 const ROLE_LABEL: Record<string, string> = {
   ADMIN: 'Administrador',
-  AGRONOMO: 'Engenheiro Agrônomo',
-  BANCO: 'Analista de Crédito',
+  AGRONOMIST: 'Engenheiro Agrônomo',
+  BANK: 'Analista de Crédito',
 };
 
 interface TopbarProps {
@@ -18,6 +19,8 @@ interface TopbarProps {
 export function Topbar({ onOpenMobileNav }: TopbarProps) {
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
+  const theme = useThemeStore((s) => s.theme);
+  const toggleTheme = useThemeStore((s) => s.toggle);
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -27,7 +30,7 @@ export function Topbar({ onOpenMobileNav }: TopbarProps) {
   }
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-border bg-surface/80 px-4 backdrop-blur-md md:px-6">
+    <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-border bg-surface px-4 md:px-6">
       <button
         type="button"
         onClick={onOpenMobileNav}
@@ -39,38 +42,49 @@ export function Topbar({ onOpenMobileNav }: TopbarProps) {
 
       <div className="hidden md:block" />
 
-      <div className="relative">
+      <div className="flex items-center gap-1">
         <button
           type="button"
-          onClick={() => setMenuOpen((v) => !v)}
-          className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-bg-subtle"
+          onClick={toggleTheme}
+          className="flex h-9 w-9 items-center justify-center rounded-md text-text-secondary hover:bg-bg-subtle hover:text-text"
+          aria-label={theme === 'dark' ? 'Mudar para tema claro' : 'Mudar para tema escuro'}
         >
-          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-accent-soft text-accent">
-            <User className="h-3.5 w-3.5" />
-          </div>
-          <span className="hidden text-left sm:block">
-            <span className="block text-xs font-medium leading-none text-text">{user?.nome}</span>
-            <span className="mt-0.5 block text-[10px] leading-none text-text-tertiary">
-              {user ? (ROLE_LABEL[user.role] ?? user.role) : ''}
-            </span>
-          </span>
+          {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
         </button>
 
-        <div
-          className={cn(
-            'absolute right-0 top-full mt-2 w-48 origin-top-right rounded-lg border border-border bg-surface p-1 shadow-lg',
-            'transition-all duration-150',
-            menuOpen ? 'visible translate-y-0 opacity-100' : 'invisible -translate-y-1 opacity-0',
-          )}
-        >
+        <div className="relative">
           <button
             type="button"
-            onClick={handleLogout}
-            className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-sm text-text-secondary hover:bg-bg-subtle hover:text-danger"
+            onClick={() => setMenuOpen((v) => !v)}
+            className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-bg-subtle"
           >
-            <LogOut className="h-4 w-4" />
-            Sair
+            <div className="flex h-7 w-7 items-center justify-center rounded-full border border-accent/30 bg-accent-soft text-accent">
+              <User className="h-3.5 w-3.5" />
+            </div>
+            <span className="hidden text-left sm:block">
+              <span className="block text-xs font-medium leading-none text-text">{user?.name}</span>
+              <span className="mt-0.5 block text-[10px] uppercase tracking-wide leading-none text-text-tertiary">
+                {user ? (ROLE_LABEL[user.role] ?? user.role) : ''}
+              </span>
+            </span>
           </button>
+
+          <div
+            className={cn(
+              'absolute right-0 top-full mt-2 w-48 origin-top-right rounded-lg border border-border bg-surface p-1',
+              'transition-all duration-150',
+              menuOpen ? 'visible translate-y-0 opacity-100' : 'invisible -translate-y-1 opacity-0',
+            )}
+          >
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-sm text-text-secondary hover:bg-bg-subtle hover:text-danger"
+            >
+              <LogOut className="h-4 w-4" />
+              Sair
+            </button>
+          </div>
         </div>
       </div>
     </header>

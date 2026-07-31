@@ -2,10 +2,31 @@ import type { HTMLAttributes } from 'react';
 
 import { cn } from '@/lib/cn';
 
-export function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
+interface CardProps extends HTMLAttributes<HTMLDivElement> {
+  accent?: 'accent' | 'gold' | 'warning' | 'danger' | 'success' | 'neutral';
+}
+
+const ACCENT_BAR: Record<NonNullable<CardProps['accent']>, string> = {
+  accent: 'before:bg-accent',
+  gold: 'before:bg-gold',
+  warning: 'before:bg-warning',
+  danger: 'before:bg-danger',
+  success: 'before:bg-success',
+  neutral: 'before:bg-border-strong',
+};
+
+export function Card({ className, accent, ...props }: CardProps) {
   return (
     <div
-      className={cn('rounded-2xl border border-border bg-surface shadow-sm', className)}
+      className={cn(
+        'rounded-lg border border-border bg-surface',
+        accent &&
+          cn(
+            'relative overflow-hidden pl-4 before:absolute before:inset-y-0 before:left-0 before:w-[3px]',
+            ACCENT_BAR[accent],
+          ),
+        className,
+      )}
       {...props}
     />
   );
@@ -16,7 +37,12 @@ export function CardHeader({ className, ...props }: HTMLAttributes<HTMLDivElemen
 }
 
 export function CardTitle({ className, ...props }: HTMLAttributes<HTMLHeadingElement>) {
-  return <h3 className={cn('text-base font-semibold tracking-tight text-text', className)} {...props} />;
+  return (
+    <h3
+      className={cn('font-display text-base font-semibold tracking-tight text-text', className)}
+      {...props}
+    />
+  );
 }
 
 export function CardDescription({ className, ...props }: HTMLAttributes<HTMLParagraphElement>) {

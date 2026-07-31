@@ -1,4 +1,4 @@
 export * from './decimal.js';
-export * from './unidades.js';
-export * from './atividades.js';
-export * from './calculadora.js';
+export * from './units.js';
+export * from './activities.js';
+export * from './calculator.js';

@@ -1,0 +1,139 @@
+// ─────────────────────────── Projeto ───────────────────────────
+
+/// DRAFT -> PENDING_SIGNATURES -> SIGNED -> UNDER_BANK_REVIEW -> APPROVED | REJECTED
+/// CANCELLED é alcançável de qualquer estado não-terminal.
+enum ProjectStatus {
+  DRAFT
+  PENDING_SIGNATURES
+  SIGNED
+  UNDER_BANK_REVIEW
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum SignatureType {
+  AGRONOMIST
+  PRODUCER
+}
+
+model Season {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  label     String   @unique
+  startDate DateTime @map("start_date")
+  endDate   DateTime @map("end_date")
+  active    Boolean  @default(true)
+
+  projects Project[]
+
+  @@map("seasons")
+}
+
+/// Contador atômico para a numeração PROJECT-{ano}-{sequencial}. Chave natural
+/// (não é GUID — é um contador, não uma entidade).
+model ProjectSequence {
+  year       Int @id
+  lastNumber Int @default(0) @map("last_number")
+
+  @@map("project_sequences")
+}
+
+model Project {
+  id           String     @id @default(uuid(7)) @db.Uuid
+  number       String     @unique
+  producerId   String     @map("producer_id") @db.Uuid
+  producer     Producer   @relation(fields: [producerId], references: [id])
+  propertyId   String     @map("property_id") @db.Uuid
+  property     Property   @relation(fields: [propertyId], references: [id])
+  seasonId     String     @map("season_id") @db.Uuid
+  season       Season     @relation(fields: [seasonId], references: [id])
+  agronomistId String     @map("agronomist_id") @db.Uuid
+  agronomist   Agronomist @relation(fields: [agronomistId], references: [id])
+
+  status      ProjectStatus @default(DRAFT)
+  issuingCity String        @map("issuing_city")
+  issueDate   DateTime      @default(now()) @map("issue_date")
+  notes       String?
+
+  // Consolidado — resultado de core.consolidate() sobre os itens.
+  totalRevenue           Decimal @default(0) @map("total_revenue") @db.Decimal(18, 2)
+  totalCost               Decimal @default(0) @map("total_cost") @db.Decimal(18, 2)
+  totalProfit             Decimal @default(0) @map("total_profit") @db.Decimal(18, 2)
+  profitMarginPercentage  Decimal @default(0) @map("profit_margin_percentage") @db.Decimal(6, 2)
+
+  documentHash String? @map("document_hash")
+
+  // Decisão de crédito do banco (etapa UNDER_BANK_REVIEW -> APPROVED | REJECTED).
+  approvedCreditLimit Decimal?  @map("approved_credit_limit") @db.Decimal(18, 2)
+  bankNotes           String?   @map("bank_notes")
+  bankReviewedById    String?   @map("bank_reviewed_by_id") @db.Uuid
+  bankReviewer        User?     @relation("BankReviewer", fields: [bankReviewedById], references: [id])
+  bankReviewedAt      DateTime? @map("bank_reviewed_at")
+
+  items      ProjectItem[]
+  signatures Signature[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([producerId])
+  @@index([seasonId])
+  @@index([status])
+  @@map("projects")
+}
+
+/// Snapshot do item calculado no momento da emissão: nome/unidade/preço/custo são
+/// copiados da Activity/PriceQuote vigentes NAQUELE instante. Atualizar a matriz de
+/// preços depois não pode alterar um projeto já emitido.
+model ProjectItem {
+  id         String   @id @default(uuid(7)) @db.Uuid
+  projectId  String   @map("project_id") @db.Uuid
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  activityId String   @map("activity_id") @db.Uuid
+  activity   Activity @relation(fields: [activityId], references: [id])
+
+  activityName String @map("activity_name")
+  unit         String
+
+  areaHectares   Decimal  @map("area_hectares") @db.Decimal(14, 2)
+  productivity   Decimal  @db.Decimal(14, 2)
+  unitPrice      Decimal  @map("unit_price") @db.Decimal(18, 4)
+  costPerHectare Decimal  @map("cost_per_hectare") @db.Decimal(18, 4)
+  herdHeadCount  Decimal? @map("herd_head_count") @db.Decimal(14, 2)
+
+  totalProduction        Decimal  @map("total_production") @db.Decimal(18, 2)
+  grossRevenue           Decimal  @map("gross_revenue") @db.Decimal(18, 2)
+  totalCost              Decimal  @map("total_cost") @db.Decimal(18, 2)
+  netProfit              Decimal  @map("net_profit") @db.Decimal(18, 2)
+  productivityPerHectare Decimal? @map("productivity_per_hectare") @db.Decimal(14, 2)
+  stockingRate           Decimal? @map("stocking_rate") @db.Decimal(14, 2)
+
+  order Int @default(0)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([projectId])
+  @@map("project_items")
+}
+
+model Signature {
+  id                String        @id @default(uuid(7)) @db.Uuid
+  projectId         String        @map("project_id") @db.Uuid
+  project           Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  type              SignatureType
+  signatoryName     String        @map("signatory_name")
+  /// CPF do produtor ou número de registro profissional do agrônomo
+  signatoryDocument String        @map("signatory_document")
+  imageBase64       String?       @map("image_base64")
+  hash              String?
+  signedAt          DateTime?     @map("signed_at")
+  ip                String?
+  userAgent         String?       @map("user_agent")
+  token             String?       @unique
+  tokenExpiresAt    DateTime?     @map("token_expires_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([projectId])
+  @@map("signatures")
+}

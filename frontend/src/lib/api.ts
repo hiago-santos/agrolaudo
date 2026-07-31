@@ -1,7 +1,6 @@
 import { getAccessToken } from '@/lib/authToken';
 
-/** Em dev, default `/api` (proxy do Vite). Em build, exige VITE_API_URL absoluto. */
-export const API_URL = import.meta.env.VITE_API_URL ?? (import.meta.env.DEV ? '/api' : '');
+export const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000';
 
 export class ApiError extends Error {
   status: number;
@@ -47,12 +46,11 @@ async function request(path: string, options: RequestInit = {}, jsonContentType 
   const { headers: optionHeaders, ...rest } = options;
   return fetch(`${API_URL}${path}`, {
     ...rest,
-    credentials: 'include',
     headers: buildHeaders(optionHeaders, jsonContentType),
   });
 }
 
-/** Wrapper de fetch para JSON — Bearer (se houver) + cookie httpOnly. */
+/** Wrapper de fetch para JSON — sempre Bearer (se houver) no header `Authorization`. */
 export async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
   const res = await request(path, options, true);
 
@@ -85,7 +83,7 @@ export async function apiDownload(path: string): Promise<{ blob: Blob; filename:
 }
 
 /** Dispara o download de um Blob já em mãos (usado depois de `apiDownload`). */
-export function baixarBlob(blob: Blob, filename: string): void {
+export function downloadBlob(blob: Blob, filename: string): void {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;

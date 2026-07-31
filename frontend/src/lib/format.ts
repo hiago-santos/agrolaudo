@@ -1,25 +1,25 @@
-export function formatarMoeda(valor: string | number | null | undefined): string {
-  const numero = Number(valor ?? 0);
-  return numero.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+export function formatCurrency(value: string | number | null | undefined): string {
+  const number = Number(value ?? 0);
+  return number.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
-export function formatarNumero(valor: string | number | null | undefined, casas = 2): string {
-  const numero = Number(valor ?? 0);
-  return numero.toLocaleString('pt-BR', { minimumFractionDigits: casas, maximumFractionDigits: casas });
+export function formatNumber(value: string | number | null | undefined, decimals = 2): string {
+  const number = Number(value ?? 0);
+  return number.toLocaleString('pt-BR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
 }
 
-export function formatarPercentual(valor: string | number | null | undefined): string {
-  return `${formatarNumero(valor, 2)}%`;
+export function formatPercentage(value: string | number | null | undefined): string {
+  return `${formatNumber(value, 2)}%`;
 }
 
-export function formatarData(data: string | Date | null | undefined): string {
-  if (!data) return '—';
-  const d = typeof data === 'string' ? new Date(data) : data;
-  return d.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+export function formatDate(value: string | Date | null | undefined): string {
+  if (!value) return '—';
+  const date = typeof value === 'string' ? new Date(value) : value;
+  return date.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
 }
 
-export function formatarDataHora(data: string | Date | null | undefined): string {
-  if (!data) return '—';
-  const d = typeof data === 'string' ? new Date(data) : data;
-  return d.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+export function formatDateTime(value: string | Date | null | undefined): string {
+  if (!value) return '—';
+  const date = typeof value === 'string' ? new Date(value) : value;
+  return date.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
 }

@@ -18,7 +18,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['prisma/seed.ts', 'src/server.ts', 'src/lib/notificacao.ts'],
+    files: ['prisma/seed.ts', 'src/server.ts', 'src/lib/notification.ts'],
     rules: {
       'no-console': 'off',
     },

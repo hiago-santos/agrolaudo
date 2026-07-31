@@ -7,7 +7,9 @@ export default defineConfig({
     environment: 'node',
     include: ['src/**/*.integration.test.ts'],
     setupFiles: ['src/test/integration/setup.ts'],
-    testTimeout: 20000,
-    hookTimeout: 20000,
+    // O Postgres é remoto (Railway) — a cadeia mais longa (criar projeto com
+    // transação + várias leituras) soma bastante round-trip de rede.
+    testTimeout: 45000,
+    hookTimeout: 45000,
   },
 });

@@ -2,7 +2,7 @@ import fp from 'fastify-plugin';
 import { ZodError } from 'zod';
 import type { FastifyError, FastifyInstance } from 'fastify';
 
-import { CalculoInvalidoError } from '../core/calculadora.js';
+import { InvalidCalculationError } from '../core/calculator.js';
 import { DomainError } from '../lib/errors.js';
 
 interface ErrorBody {
@@ -18,8 +18,8 @@ export default fp(async function errorHandlerPlugin(app: FastifyInstance) {
       return reply.status(error.statusCode).send(body);
     }
 
-    if (error instanceof CalculoInvalidoError) {
-      const body: ErrorBody = { error: 'CALCULO_INVALIDO', message: error.message };
+    if (error instanceof InvalidCalculationError) {
+      const body: ErrorBody = { error: 'INVALID_CALCULATION', message: error.message };
       return reply.status(400).send(body);
     }
 

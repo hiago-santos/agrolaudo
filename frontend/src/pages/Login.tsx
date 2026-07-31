@@ -1,17 +1,17 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Sprout } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 
 import { Button } from '@/components/ui/Button';
 import { FieldError, Input, Label } from '@/components/ui/Input';
+import { Seal } from '@/components/ui/Seal';
 import { PageSpinner } from '@/components/ui/Spinner';
 import { useAuthStore } from '@/stores/auth';
 
 const loginSchema = z.object({
   email: z.string().email('Informe um e-mail válido.'),
-  senha: z.string().min(1, 'Informe a senha.'),
+  password: z.string().min(1, 'Informe a senha.'),
 });
 type LoginForm = z.infer<typeof loginSchema>;
 
@@ -30,44 +30,55 @@ export function Login() {
     formState: { errors },
   } = useForm<LoginForm>({ resolver: zodResolver(loginSchema) });
 
-  // Só confia no user do localStorage depois do /auth/me — senão a UI parece
-  // logada com cookie morto e todas as APIs respondem 401.
   if (!hydrated) return <PageSpinner />;
   if (isAuth) {
-    const destino = (location.state as { from?: string } | null)?.from ?? '/';
-    return <Navigate to={destino} replace />;
+    const destination = (location.state as { from?: string } | null)?.from ?? '/';
+    return <Navigate to={destination} replace />;
   }
 
   async function onSubmit(data: LoginForm) {
-    const ok = await login(data.email, data.senha);
+    const ok = await login(data.email, data.password);
     if (ok) navigate('/', { replace: true });
   }
 
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-bg px-4">
       <div
-        className="pointer-events-none absolute inset-x-0 top-0 h-[420px] opacity-60"
+        className="pointer-events-none absolute inset-0 opacity-[0.35]"
         style={{
-          background:
-            'radial-gradient(60% 60% at 50% 0%, color-mix(in srgb, var(--accent) 16%, transparent), transparent)',
+          backgroundImage: `
+            radial-gradient(circle at 20% 30%, rgba(30, 77, 43, 0.08) 0%, transparent 50%),
+            radial-gradient(circle at 80% 70%, rgba(184, 134, 46, 0.06) 0%, transparent 50%),
+            repeating-linear-gradient(
+              0deg,
+              transparent,
+              transparent 39px,
+              rgba(34, 31, 23, 0.03) 39px,
+              rgba(34, 31, 23, 0.03) 40px
+            )
+          `,
         }}
       />
 
-      <div className="relative w-full max-w-sm">
+      <div className="relative w-full max-w-sm animate-page-enter">
         <div className="mb-8 flex flex-col items-center text-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-accent text-white shadow-sm">
-            <Sprout className="h-6 w-6" />
-          </div>
-          <h1 className="mt-4 text-xl font-semibold tracking-tight text-text">AgroLaudo</h1>
-          <p className="mt-1 text-sm text-text-secondary">
+          <Seal size="lg" />
+          <h1 className="mt-5 font-display text-2xl font-semibold tracking-tight text-text">AgroLaudo</h1>
+          <p className="mt-2 max-w-xs text-sm text-text-secondary">
             Laudos de Capacidade Pagadora para produtores rurais
           </p>
         </div>
 
         <form
           onSubmit={(e) => void handleSubmit(onSubmit)(e)}
-          className="space-y-4 rounded-2xl border border-border bg-surface p-6 shadow-sm"
+          className="space-y-4 rounded-lg border border-border-strong bg-surface p-6"
         >
+          <div className="border-b border-border pb-3">
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-text-tertiary">
+              Acesso restrito
+            </p>
+          </div>
+
           <div>
             <Label htmlFor="email">E-mail</Label>
             <Input
@@ -81,13 +92,13 @@ export function Login() {
           </div>
 
           <div>
-            <Label htmlFor="senha">Senha</Label>
-            <Input id="senha" type="password" autoComplete="current-password" {...register('senha')} />
-            <FieldError>{errors.senha?.message}</FieldError>
+            <Label htmlFor="password">Senha</Label>
+            <Input id="password" type="password" autoComplete="current-password" {...register('password')} />
+            <FieldError>{errors.password?.message}</FieldError>
           </div>
 
           {error && (
-            <p className="rounded-lg border border-danger/30 bg-danger-soft px-3 py-2 text-xs text-danger">
+            <p className="rounded-md border border-danger/30 bg-danger-soft px-3 py-2 text-xs text-danger">
               {error}
             </p>
           )}
@@ -98,7 +109,7 @@ export function Login() {
         </form>
 
         <p className="mt-6 text-center text-xs text-text-tertiary">
-          Acesso restrito a Engenheiros Agrônomos e instituições parceiras.
+          Engenheiros Agrônomos e instituições parceiras
         </p>
       </div>
     </div>

@@ -1,0 +1,52 @@
+// ─────────────────────────── Cadastro base ───────────────────────────
+
+enum ProducerClassification {
+  PRONAF
+  PRONAMP
+  OTHER
+}
+
+model Producer {
+  id             String                 @id @default(uuid(7)) @db.Uuid
+  name           String
+  taxId          String                 @unique @map("tax_id")
+  phone          String?
+  email          String?
+  address        String?
+  city           String
+  state          String
+  classification ProducerClassification @default(OTHER)
+
+  properties Property[]
+  projects   Project[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([name])
+  @@map("producers")
+}
+
+model Property {
+  id                         String   @id @default(uuid(7)) @db.Uuid
+  producerId                 String   @map("producer_id") @db.Uuid
+  producer                   Producer @relation(fields: [producerId], references: [id], onDelete: Cascade)
+  name                       String
+  registrationNumber         String   @map("registration_number")
+  city                       String
+  state                      String
+  totalAreaHectares          Decimal  @map("total_area_hectares") @db.Decimal(14, 2)
+  stateRegistration          String?  @map("state_registration")
+  ruralEnvironmentalRegistry String?  @map("rural_environmental_registry")
+  latitude                   Decimal? @db.Decimal(9, 6)
+  longitude                  Decimal? @db.Decimal(9, 6)
+
+  projects Project[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([producerId, registrationNumber])
+  @@index([producerId])
+  @@map("properties")
+}

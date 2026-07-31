@@ -13,12 +13,12 @@ export function ProtectedRoute({ children }: { children: ReactElement }) {
   return children;
 }
 
-/** Bloqueia rotas de escrita para o perfil BANCO (somente leitura, ver plano). */
+/** Bloqueia rotas de escrita para o perfil BANK (leitura + decisão pontual, ver plano). */
 export function RequireRole({
   roles,
   children,
 }: {
-  roles: Array<'ADMIN' | 'AGRONOMO' | 'BANCO'>;
+  roles: Array<'ADMIN' | 'AGRONOMIST' | 'BANK'>;
   children: ReactElement;
 }) {
   const hasRole = useAuthStore((s) => s.hasRole(...roles));

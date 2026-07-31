@@ -2,10 +2,10 @@ import bcrypt from 'bcryptjs';
 
 const SALT_ROUNDS = 10;
 
-export function hashSenha(senha: string): Promise<string> {
-  return bcrypt.hash(senha, SALT_ROUNDS);
+export function hashPassword(password: string): Promise<string> {
+  return bcrypt.hash(password, SALT_ROUNDS);
 }
 
-export function verificarSenha(senha: string, hash: string): Promise<boolean> {
-  return bcrypt.compare(senha, hash);
+export function verifyPassword(password: string, hash: string): Promise<boolean> {
+  return bcrypt.compare(password, hash);
 }

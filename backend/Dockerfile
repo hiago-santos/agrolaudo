@@ -1,17 +1,6 @@
 FROM node:20-bookworm-slim AS base
 RUN corepack enable
 
-# Chromium do sistema operacional em vez do Chromium baixado pelo Puppeteer na
-# instalação — imagem final menor e build não depende de baixar ~300MB do npm.
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    chromium \
-    fonts-liberation \
-    ca-certificates \
-  && rm -rf /var/lib/apt/lists/*
-
-ENV PUPPETEER_SKIP_DOWNLOAD=true
-ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
-
 WORKDIR /app
 
 FROM base AS deps
@@ -34,6 +23,7 @@ COPY --from=build /app/prisma ./prisma
 # consistente (o mesmo `pnpm db:seed` funciona igual em dev e em produção).
 COPY --from=build /app/src ./src
 COPY --from=build /app/tsconfig.json ./
+COPY --from=build /app/prisma.config.ts ./
 COPY package.json ./
 
 EXPOSE 8000
