@@ -105,6 +105,24 @@ export async function refreshSession(): Promise<RefreshedSession | null> {
       });
 
       if (!res.ok) {
+        // O token é de uso único: se outra aba rotacionou ao mesmo tempo, essa
+        // falha não é sessão expirada — é só perder a corrida. Dá um instante
+        // pra escrita da aba vencedora chegar antes de decidir que caiu de vez.
+        for (let attempt = 0; attempt < 3; attempt += 1) {
+          if (getRefreshToken() !== currentRefresh) {
+            const access = getAccessToken();
+            if (access && !accessTokenNeedsRefresh()) {
+              return {
+                accessToken: access,
+                refreshToken: getRefreshToken() ?? currentRefresh,
+                expiresIn: 60 * 60,
+                rememberMe: false,
+              };
+            }
+          }
+          if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 200));
+        }
+
         if (getRefreshToken() === currentRefresh) {
           if (accessTokenNeedsRefresh()) {
             clearAuthTokens();
@@ -116,12 +134,13 @@ export async function refreshSession(): Promise<RefreshedSession | null> {
         return null;
       }
 
-      if (getRefreshToken() !== currentRefresh) {
+      const rotatedRefresh = getRefreshToken();
+      if (rotatedRefresh !== currentRefresh) {
         const access = getAccessToken();
-        if (!access) return null;
+        if (!access || !rotatedRefresh) return null;
         return {
           accessToken: access,
-          refreshToken: getRefreshToken()!,
+          refreshToken: rotatedRefresh,
           expiresIn: 60 * 60,
           rememberMe: false,
         };

@@ -129,11 +129,22 @@ export const useAuthStore = create<AuthState>()(
           const epoch = sessionEpoch;
           set({ loading: true });
 
-          // Já logado com access válido — só marca hydrated.
-          if (get().user && getAccessToken() && !accessTokenNeedsRefresh()) {
-            if (epoch !== sessionEpoch) return;
-            set({ loading: false, hydrated: true, authenticated: true });
-            return;
+          // Access token ainda válido — evita girar o refresh (uso único) à toa
+          // a cada reload. Só busca o usuário se ele não estiver em cache.
+          if (getAccessToken() && !accessTokenNeedsRefresh()) {
+            if (get().user) {
+              if (epoch !== sessionEpoch) return;
+              set({ loading: false, hydrated: true, authenticated: true });
+              return;
+            }
+            try {
+              const user = await authService.me();
+              if (epoch !== sessionEpoch) return;
+              set({ user, loading: false, hydrated: true, authenticated: true });
+              return;
+            } catch {
+              // Access token "válido" localmente mas rejeitado pelo servidor — cai pro refresh abaixo.
+            }
           }
 
           const refreshToken = getRefreshToken();
@@ -164,6 +175,18 @@ export const useAuthStore = create<AuthState>()(
             if (epoch !== sessionEpoch) return;
 
             if (!session) {
+              // Pode ter perdido uma corrida de rotação (outra aba já girou o
+              // token). Reconfere o que estiver em storage agora antes de deslogar.
+              if (getAccessToken() && !accessTokenNeedsRefresh()) {
+                try {
+                  const user = get().user ?? (await authService.me());
+                  if (epoch !== sessionEpoch) return;
+                  set({ user, loading: false, hydrated: true, authenticated: true });
+                  return;
+                } catch {
+                  // segue pro fallback abaixo
+                }
+              }
               if (hasLiveSession() && get().user) {
                 set({ loading: false, hydrated: true, authenticated: true });
                 return;
@@ -214,8 +237,11 @@ export const useAuthStore = create<AuthState>()(
     {
       name: 'agrolaudo-auth',
       storage: createJSONStorage(() => localStorage),
+      // Os tokens já ficam em localStorage independente do "lembrar-me" (esse
+      // só define o TTL do refresh no servidor) — então cachear o user também
+      // evita girar o refresh token (uso único) sem necessidade a cada reload.
       partialize: (state) => ({
-        user: state.rememberMe ? state.user : null,
+        user: state.user,
         rememberMe: state.rememberMe,
       }),
       onRehydrateStorage: () => (state) => {
