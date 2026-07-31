@@ -15,12 +15,17 @@ const STEPS: Step[] = [
 
 export function StepIndicator({ current }: { current: number }) {
   return (
-    <ol className="flex items-center gap-2 sm:gap-4">
+    <ol className="flex w-full items-center">
       {STEPS.map((step, index) => {
         const done = step.number < current;
         const active = step.number === current;
+        const isLast = index === STEPS.length - 1;
+
         return (
-          <li key={step.number} className="flex flex-1 items-center gap-2 sm:gap-4">
+          <li
+            key={step.number}
+            className={cn('flex min-w-0 items-center', isLast ? 'shrink-0' : 'flex-1')}
+          >
             <div className="flex min-w-0 items-center gap-2">
               <div
                 className={cn(
@@ -42,8 +47,8 @@ export function StepIndicator({ current }: { current: number }) {
                 {step.title}
               </span>
             </div>
-            {index < STEPS.length - 1 && (
-              <div className={cn('h-px flex-1', done ? 'bg-accent' : 'bg-border')} />
+            {!isLast && (
+              <div className={cn('mx-3 h-px min-w-4 flex-1 sm:mx-4', done ? 'bg-accent' : 'bg-border')} />
             )}
           </li>
         );

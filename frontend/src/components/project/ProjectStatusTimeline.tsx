@@ -17,9 +17,15 @@ const FLOW: TimelineStep[] = [
   { status: 'APPROVED', label: 'Decisão do banco', icon: Check },
 ];
 
-const FLOW_ORDER: ProjectStatus[] = ['DRAFT', 'PENDING_SIGNATURES', 'SIGNED', 'UNDER_BANK_REVIEW', 'APPROVED'];
+const FLOW_ORDER: ProjectStatus[] = [
+  'DRAFT',
+  'PENDING_SIGNATURES',
+  'SIGNED',
+  'UNDER_BANK_REVIEW',
+  'APPROVED',
+];
 
-/** Visualiza o fluxo Agrônomo → Banco → Produtor (ver plano, ponto 3). */
+/** Visualiza o fluxo Agrônomo → Banco → Produtor. */
 export function ProjectStatusTimeline({ status }: { status: ProjectStatus }) {
   if (status === 'CANCELLED') {
     return (
@@ -31,46 +37,57 @@ export function ProjectStatusTimeline({ status }: { status: ProjectStatus }) {
   }
 
   const rejected = status === 'REJECTED';
-  const currentIndex = rejected ? FLOW_ORDER.indexOf('UNDER_BANK_REVIEW') : FLOW_ORDER.indexOf(status);
+  const currentIndex = rejected
+    ? FLOW_ORDER.indexOf('UNDER_BANK_REVIEW')
+    : FLOW_ORDER.indexOf(status);
 
   return (
-    <ol className="flex items-center gap-1 overflow-x-auto pb-1 sm:gap-2">
+    <ol className="flex w-full items-start">
       {FLOW.map((step, index) => {
         const done = index < currentIndex || (index === currentIndex && !rejected);
         const isLast = index === FLOW.length - 1;
         const isDecisionStep = step.status === 'APPROVED';
         const Icon = isDecisionStep && rejected ? ThumbsDown : step.icon;
-        const label = isDecisionStep ? (rejected ? 'Reprovado pelo banco' : done ? 'Aprovado pelo banco' : step.label) : step.label;
+        const label = isDecisionStep
+          ? rejected
+            ? 'Reprovado pelo banco'
+            : done
+              ? 'Aprovado pelo banco'
+              : step.label
+          : step.label;
+        const connectorDone = index < currentIndex;
 
         return (
-          <li key={step.status} className="flex shrink-0 items-center gap-1 sm:gap-2">
-            <div className="flex flex-col items-center gap-1">
-              <div
-                className={cn(
-                  'flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition-colors',
-                  isDecisionStep && rejected
-                    ? 'bg-danger text-white'
-                    : done
-                      ? 'bg-accent text-white'
-                      : 'bg-bg-subtle text-text-tertiary',
-                )}
-              >
-                <Icon className="h-3.5 w-3.5" />
-              </div>
-              <span
-                className={cn(
-                  'max-w-[92px] text-center text-[10px] font-medium leading-tight',
-                  done || (isDecisionStep && rejected) ? 'text-text' : 'text-text-tertiary',
-                )}
-              >
-                {label}
-              </span>
-            </div>
+          <li key={step.status} className="relative flex min-w-0 flex-1 flex-col items-center px-1">
             {!isLast && (
               <div
-                className={cn('h-px w-6 shrink-0 sm:w-10', index < currentIndex ? 'bg-accent' : 'bg-border')}
+                aria-hidden
+                className={cn(
+                  'absolute top-3.5 left-[calc(50%+1rem)] right-[calc(-50%+1rem)] h-px',
+                  connectorDone ? 'bg-accent' : 'bg-border',
+                )}
               />
             )}
+            <div
+              className={cn(
+                'relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition-colors',
+                isDecisionStep && rejected
+                  ? 'bg-danger text-white'
+                  : done
+                    ? 'bg-accent text-white'
+                    : 'bg-bg-subtle text-text-tertiary',
+              )}
+            >
+              <Icon className="h-3.5 w-3.5" />
+            </div>
+            <span
+              className={cn(
+                'mt-1.5 w-full text-center text-[10px] font-medium leading-tight sm:text-[11px]',
+                done || (isDecisionStep && rejected) ? 'text-text' : 'text-text-tertiary',
+              )}
+            >
+              {label}
+            </span>
           </li>
         );
       })}
