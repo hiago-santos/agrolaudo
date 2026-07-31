@@ -77,6 +77,14 @@ async function refreshSession(): Promise<boolean> {
       return false;
     }
 
+    /** Só limpa sessão se o refresh que falhou ainda for o atual (não um login novo). */
+    const clearIfStillCurrent = () => {
+      if (getRefreshToken() !== currentRefresh) return false;
+      clearAuthTokens();
+      onSessionRefreshed?.(null);
+      return false;
+    };
+
     try {
       const res = await fetch(`${API_URL}/auth/refresh`, {
         method: 'POST',
@@ -85,9 +93,12 @@ async function refreshSession(): Promise<boolean> {
       });
 
       if (!res.ok) {
-        clearAuthTokens();
-        onSessionRefreshed?.(null);
-        return false;
+        return clearIfStillCurrent();
+      }
+
+      // Login paralelo pode ter substituído o refresh enquanto este request voava.
+      if (getRefreshToken() !== currentRefresh) {
+        return true;
       }
 
       const data = (await res.json()) as {
@@ -102,9 +113,7 @@ async function refreshSession(): Promise<boolean> {
       onSessionRefreshed?.(data);
       return true;
     } catch {
-      clearAuthTokens();
-      onSessionRefreshed?.(null);
-      return false;
+      return clearIfStillCurrent();
     } finally {
       refreshPromise = null;
     }

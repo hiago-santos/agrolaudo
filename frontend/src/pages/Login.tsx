@@ -23,9 +23,10 @@ export function Login() {
   const error = useAuthStore((s) => s.error);
   const hydrated = useAuthStore((s) => s.hydrated);
   const remembered = useAuthStore((s) => s.rememberMe);
-  const isAuth = useAuthStore((s) => s.isAuthenticated());
+  const isAuth = useAuthStore((s) => s.authenticated);
   const navigate = useNavigate();
   const location = useLocation();
+  const destination = (location.state as { from?: string } | null)?.from ?? '/';
 
   const {
     register,
@@ -38,13 +39,12 @@ export function Login() {
 
   if (!hydrated) return <BootScreen />;
   if (isAuth) {
-    const destination = (location.state as { from?: string } | null)?.from ?? '/';
     return <Navigate to={destination} replace />;
   }
 
   async function onSubmit(data: LoginForm) {
     const ok = await login(data.email, data.password, data.rememberMe);
-    if (ok) navigate('/', { replace: true });
+    if (ok) navigate(destination, { replace: true });
   }
 
   return (

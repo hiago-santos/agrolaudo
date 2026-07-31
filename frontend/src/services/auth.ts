@@ -14,6 +14,8 @@ export const authService = {
     api<AuthSession>('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password, rememberMe }),
+      // Login não depende de sessão prévia — evita refresh stale atrapalhar o fluxo.
+      headers: { 'X-Skip-Auth-Refresh': '1' },
     }),
 
   refresh: (refreshToken: string) =>

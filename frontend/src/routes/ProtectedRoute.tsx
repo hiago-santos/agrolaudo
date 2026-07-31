@@ -5,7 +5,7 @@ import { BootScreen } from '@/components/ui/BootScreen';
 import { useAuthStore } from '@/stores/auth';
 
 export function ProtectedRoute({ children }: { children: ReactElement }) {
-  const isAuth = useAuthStore((s) => s.isAuthenticated());
+  const isAuth = useAuthStore((s) => s.authenticated);
   const hydrated = useAuthStore((s) => s.hydrated);
 
   if (!hydrated) return <BootScreen />;
