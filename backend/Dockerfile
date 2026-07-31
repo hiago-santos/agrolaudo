@@ -27,4 +27,5 @@ COPY --from=build /app/prisma.config.ts ./
 COPY package.json ./
 
 EXPOSE 8000
-CMD ["node", "dist/server.js"]
+# migrate deploy é idempotente — garante refresh_tokens etc. em cada release no Railway.
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/server.js"]

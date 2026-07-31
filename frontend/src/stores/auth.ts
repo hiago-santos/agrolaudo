@@ -35,12 +35,16 @@ let hydratePromise: Promise<void> | null = null;
 
 function applySession(session: {
   accessToken: string;
-  refreshToken: string;
+  refreshToken?: string;
   expiresIn: number;
   rememberMe: boolean;
 }) {
+  if (session.refreshToken) {
+    setRefreshToken(session.refreshToken, session.rememberMe);
+  } else {
+    setRefreshToken(null, session.rememberMe);
+  }
   setAccessToken(session.accessToken, session.expiresIn);
-  setRefreshToken(session.refreshToken, session.rememberMe);
 }
 
 function hasLiveSession(): boolean {
@@ -70,6 +74,20 @@ export const useAuthStore = create<AuthState>()(
           // Invalida hydrates em voo só depois do sucesso — nunca descarta o login.
           sessionEpoch += 1;
           applySession(session);
+
+          // Sem Bearer gravado, não marca sessão — evita “logado” com requests sem Authorization.
+          if (!getAccessToken()) {
+            clearAuthTokens();
+            set({
+              error: 'Não foi possível gravar a sessão. Tente novamente.',
+              loading: false,
+              user: null,
+              authenticated: false,
+              hydrated: true,
+            });
+            return false;
+          }
+
           set({
             user: session.user,
             rememberMe: session.rememberMe,

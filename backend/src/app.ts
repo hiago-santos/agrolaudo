@@ -33,6 +33,8 @@ import prismaPlugin from './plugins/prisma.js';
 
 export function buildApp(env: Env) {
   const app = Fastify({
+    // Railway/proxies encaminham X-Forwarded-*; necessário atrás de TLS terminator.
+    trustProxy: true,
     logger:
       env.NODE_ENV === 'development'
         ? {
@@ -50,7 +52,14 @@ export function buildApp(env: Env) {
   app.register(errorHandlerPlugin);
 
   app.register(helmet, { contentSecurityPolicy: false });
-  app.register(cors, { origin: env.CORS_ORIGIN });
+
+  // Aceita uma origem ou lista separada por vírgula (ex.: domínio custom + *.up.railway.app).
+  const corsOrigins = env.CORS_ORIGIN.split(',').map((o) => o.trim()).filter(Boolean);
+  app.register(cors, {
+    origin: corsOrigins.length === 1 ? corsOrigins[0] : corsOrigins,
+    allowedHeaders: ['Authorization', 'Content-Type', 'X-Skip-Auth-Refresh'],
+    exposedHeaders: ['Content-Disposition'],
+  });
   app.register(rateLimit, { max: 300, timeWindow: '1 minute' });
   app.register(multipart);
 

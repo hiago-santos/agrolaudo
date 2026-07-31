@@ -41,7 +41,14 @@ export default fp(async function authPlugin(app: FastifyInstance, opts: AuthPlug
   app.decorate('authenticate', async (request: FastifyRequest) => {
     try {
       await request.jwtVerify();
-    } catch {
+    } catch (error) {
+      request.log.warn(
+        {
+          hasAuthorization: Boolean(request.headers.authorization),
+          err: error instanceof Error ? error.message : String(error),
+        },
+        'Falha ao validar JWT',
+      );
       throw new UnauthorizedError('Sessão inválida ou expirada. Faça login novamente.');
     }
   });

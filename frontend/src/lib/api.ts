@@ -5,9 +5,12 @@ import {
   setAccessToken,
   setRefreshToken,
   clearAuthTokens,
+  clearRefreshToken,
 } from '@/lib/authToken';
 
-export const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000';
+// String vazia no .env NÃO deve cair no ?? (só null/undefined). Trata como unset.
+const rawApiUrl = import.meta.env.VITE_API_URL?.trim();
+export const API_URL = rawApiUrl || 'http://localhost:8000';
 
 export class ApiError extends Error {
   status: number;
@@ -55,16 +58,19 @@ async function parseErrorBody(res: Response): Promise<ErrorBody> {
   }
 }
 
+function applyBearer(headers: Headers): void {
+  const token = getAccessToken();
+  if (token) headers.set('Authorization', `Bearer ${token}`);
+  else headers.delete('Authorization');
+}
+
 function buildHeaders(init?: HeadersInit, jsonBody = false): Headers {
   const headers = new Headers(init);
   // Fastify rejeita Content-Type: application/json sem body (ex.: POST de ação).
   if (jsonBody && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json');
   }
-  const token = getAccessToken();
-  if (token && !headers.has('Authorization')) {
-    headers.set('Authorization', `Bearer ${token}`);
-  }
+  applyBearer(headers);
   return headers;
 }
 
@@ -76,7 +82,7 @@ function hasRequestBody(body: BodyInit | null | undefined): boolean {
 
 /**
  * Renova access+refresh com single-flight (um POST por vez).
- * Usado pelo api client e pelo hydrate do store — evita rotação concorrente.
+ * Em falha: NÃO apaga access ainda válido (evita request sem Authorization).
  */
 export async function refreshSession(): Promise<RefreshedSession | null> {
   if (refreshPromise) return refreshPromise;
@@ -84,8 +90,10 @@ export async function refreshSession(): Promise<RefreshedSession | null> {
   refreshPromise = (async () => {
     const currentRefresh = getRefreshToken();
     if (!currentRefresh) {
-      clearAuthTokens();
-      onSessionRefreshed?.(null);
+      if (accessTokenNeedsRefresh()) {
+        clearAuthTokens();
+        onSessionRefreshed?.(null);
+      }
       return null;
     }
 
@@ -97,15 +105,17 @@ export async function refreshSession(): Promise<RefreshedSession | null> {
       });
 
       if (!res.ok) {
-        // Só limpa se o refresh que falhou ainda for o atual (login novo não é apagado).
         if (getRefreshToken() === currentRefresh) {
-          clearAuthTokens();
-          onSessionRefreshed?.(null);
+          if (accessTokenNeedsRefresh()) {
+            clearAuthTokens();
+            onSessionRefreshed?.(null);
+          } else {
+            clearRefreshToken();
+          }
         }
         return null;
       }
 
-      // Login paralelo pode ter substituído o refresh enquanto este request voava.
       if (getRefreshToken() !== currentRefresh) {
         const access = getAccessToken();
         if (!access) return null;
@@ -117,16 +127,36 @@ export async function refreshSession(): Promise<RefreshedSession | null> {
         };
       }
 
-      const data = (await res.json()) as RefreshedSession;
+      const raw = (await res.json()) as RefreshedSession & { token?: string };
+      const accessToken = raw.accessToken ?? raw.token;
+      if (!accessToken || !raw.refreshToken) {
+        if (getRefreshToken() === currentRefresh && accessTokenNeedsRefresh()) {
+          clearAuthTokens();
+          onSessionRefreshed?.(null);
+        }
+        return null;
+      }
 
-      setAccessToken(data.accessToken, data.expiresIn);
+      const data: RefreshedSession = {
+        accessToken,
+        refreshToken: raw.refreshToken,
+        expiresIn: raw.expiresIn,
+        rememberMe: raw.rememberMe,
+        user: raw.user,
+      };
+
       setRefreshToken(data.refreshToken, data.rememberMe);
+      setAccessToken(data.accessToken, data.expiresIn);
       onSessionRefreshed?.(data);
       return data;
     } catch {
       if (getRefreshToken() === currentRefresh) {
-        clearAuthTokens();
-        onSessionRefreshed?.(null);
+        if (accessTokenNeedsRefresh()) {
+          clearAuthTokens();
+          onSessionRefreshed?.(null);
+        } else {
+          clearRefreshToken();
+        }
       }
       return null;
     } finally {
@@ -139,8 +169,8 @@ export async function refreshSession(): Promise<RefreshedSession | null> {
 
 async function ensureFreshAccessToken(skipRefresh: boolean): Promise<void> {
   if (skipRefresh) return;
-  if (!getRefreshToken()) return;
   if (!accessTokenNeedsRefresh()) return;
+  if (!getRefreshToken()) return;
   await refreshSession();
 }
 
@@ -152,11 +182,7 @@ async function request(path: string, options: RequestInit = {}, asJson = true): 
   headers.delete('X-Skip-Auth-Refresh');
 
   await ensureFreshAccessToken(skipRefresh);
-
-  // Reaplica o Bearer após um possível refresh.
-  const token = getAccessToken();
-  if (token) headers.set('Authorization', `Bearer ${token}`);
-  else headers.delete('Authorization');
+  applyBearer(headers);
 
   let res = await fetch(`${API_URL}${path}`, {
     ...rest,
@@ -168,9 +194,7 @@ async function request(path: string, options: RequestInit = {}, asJson = true): 
     if (refreshed) {
       const retryHeaders = buildHeaders(optionHeaders, jsonBody);
       retryHeaders.delete('X-Skip-Auth-Refresh');
-      const retryToken = getAccessToken();
-      if (retryToken) retryHeaders.set('Authorization', `Bearer ${retryToken}`);
-      else retryHeaders.delete('Authorization');
+      applyBearer(retryHeaders);
       res = await fetch(`${API_URL}${path}`, {
         ...rest,
         headers: retryHeaders,

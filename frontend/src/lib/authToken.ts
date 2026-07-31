@@ -1,7 +1,6 @@
 /**
- * Tokens de sessão.
- * - access: memória + sessionStorage (sobrevive HMR do Vite na mesma aba)
- * - refresh: localStorage se "lembrar-me", senão sessionStorage
+ * Tokens de sessão — access (JWT) e refresh sempre em localStorage.
+ * O "lembrar-me" só altera o TTL do refresh no servidor, não o storage.
  */
 
 const REFRESH_KEY = 'agrolaudo-refresh';
@@ -9,55 +8,71 @@ const REMEMBER_KEY = 'agrolaudo-remember';
 const ACCESS_KEY = 'agrolaudo-access';
 const ACCESS_EXPIRES_KEY = 'agrolaudo-access-expires';
 
-let accessToken: string | null = null;
-let accessExpiresAt = 0;
-let accessLoaded = false;
+function isUsableToken(token: string | null | undefined): token is string {
+  return !!token && token !== 'undefined' && token !== 'null';
+}
 
-function readPersistedAccess(): void {
-  if (accessLoaded) return;
-  accessLoaded = true;
+function readAccessFromStorage(): { token: string; expiresAt: number } | null {
   try {
-    const stored = sessionStorage.getItem(ACCESS_KEY);
-    const expiresRaw = sessionStorage.getItem(ACCESS_EXPIRES_KEY);
-    const expires = expiresRaw ? Number(expiresRaw) : 0;
-    if (stored && expires > Date.now()) {
-      accessToken = stored;
-      accessExpiresAt = expires;
-    } else if (stored) {
-      sessionStorage.removeItem(ACCESS_KEY);
-      sessionStorage.removeItem(ACCESS_EXPIRES_KEY);
+    const token = localStorage.getItem(ACCESS_KEY);
+    const expiresAt = Number(localStorage.getItem(ACCESS_EXPIRES_KEY) || 0);
+    if (isUsableToken(token) && expiresAt > Date.now()) {
+      return { token, expiresAt };
+    }
+    if (token) {
+      localStorage.removeItem(ACCESS_KEY);
+      localStorage.removeItem(ACCESS_EXPIRES_KEY);
     }
   } catch {
-    // sessionStorage indisponível
+    // localStorage indisponível
   }
+  // Migra restos antigos do sessionStorage, se houver.
+  try {
+    const legacy = sessionStorage.getItem(ACCESS_KEY);
+    const legacyExp = Number(sessionStorage.getItem(ACCESS_EXPIRES_KEY) || 0);
+    sessionStorage.removeItem(ACCESS_KEY);
+    sessionStorage.removeItem(ACCESS_EXPIRES_KEY);
+    if (isUsableToken(legacy) && legacyExp > Date.now()) {
+      localStorage.setItem(ACCESS_KEY, legacy);
+      localStorage.setItem(ACCESS_EXPIRES_KEY, String(legacyExp));
+      return { token: legacy, expiresAt: legacyExp };
+    }
+  } catch {
+    // ignore
+  }
+  return null;
 }
 
 export function getAccessToken(): string | null {
-  readPersistedAccess();
-  return accessToken;
+  return readAccessFromStorage()?.token ?? null;
 }
 
 export function setAccessToken(token: string | null, expiresInSeconds?: number): void {
-  accessLoaded = true;
-  accessToken = token;
-  if (!token) {
-    accessExpiresAt = 0;
+  try {
+    localStorage.removeItem(ACCESS_KEY);
+    localStorage.removeItem(ACCESS_EXPIRES_KEY);
     sessionStorage.removeItem(ACCESS_KEY);
     sessionStorage.removeItem(ACCESS_EXPIRES_KEY);
-    return;
+  } catch {
+    // ignore
   }
+
+  if (!isUsableToken(token)) return;
+
   // Renova ~60s antes do vencimento real.
   const ttlMs = Math.max(30, (expiresInSeconds ?? 60 * 60) - 60) * 1000;
-  accessExpiresAt = Date.now() + ttlMs;
-  sessionStorage.setItem(ACCESS_KEY, token);
-  sessionStorage.setItem(ACCESS_EXPIRES_KEY, String(accessExpiresAt));
+  const expiresAt = Date.now() + ttlMs;
+  try {
+    localStorage.setItem(ACCESS_KEY, token);
+    localStorage.setItem(ACCESS_EXPIRES_KEY, String(expiresAt));
+  } catch {
+    // ignore
+  }
 }
 
 /** True quando o access token está ausente ou perto de expirar. */
 export function accessTokenNeedsRefresh(): boolean {
-  readPersistedAccess();
-  if (!accessToken) return true;
-  return Date.now() >= accessExpiresAt;
+  return !readAccessFromStorage();
 }
 
 export function getRememberMe(): boolean {
@@ -70,28 +85,60 @@ export function setRememberMe(remember: boolean): void {
 }
 
 export function getRefreshToken(): string | null {
-  return localStorage.getItem(REFRESH_KEY) ?? sessionStorage.getItem(REFRESH_KEY);
+  const fromLocal = localStorage.getItem(REFRESH_KEY);
+  if (fromLocal) return fromLocal;
+  // Migra refresh antigo do sessionStorage.
+  try {
+    const legacy = sessionStorage.getItem(REFRESH_KEY);
+    if (legacy) {
+      sessionStorage.removeItem(REFRESH_KEY);
+      localStorage.setItem(REFRESH_KEY, legacy);
+      return legacy;
+    }
+  } catch {
+    // ignore
+  }
+  return null;
 }
 
 export function setRefreshToken(token: string | null, remember: boolean): void {
-  // Evita deixar o refresh nos dois storages ao mesmo tempo.
-  localStorage.removeItem(REFRESH_KEY);
-  sessionStorage.removeItem(REFRESH_KEY);
+  try {
+    localStorage.removeItem(REFRESH_KEY);
+    sessionStorage.removeItem(REFRESH_KEY);
+  } catch {
+    // ignore
+  }
   setRememberMe(remember);
 
-  if (!token) return;
+  if (!isUsableToken(token)) return;
 
-  const storage = remember ? localStorage : sessionStorage;
-  storage.setItem(REFRESH_KEY, token);
+  try {
+    localStorage.setItem(REFRESH_KEY, token);
+  } catch {
+    // ignore
+  }
+}
+
+/** Remove só o refresh — preserva access ainda válido. */
+export function clearRefreshToken(): void {
+  try {
+    localStorage.removeItem(REFRESH_KEY);
+    sessionStorage.removeItem(REFRESH_KEY);
+  } catch {
+    // ignore
+  }
 }
 
 export function clearAuthTokens(): void {
-  accessToken = null;
-  accessExpiresAt = 0;
-  accessLoaded = true;
-  sessionStorage.removeItem(ACCESS_KEY);
-  sessionStorage.removeItem(ACCESS_EXPIRES_KEY);
-  localStorage.removeItem(REFRESH_KEY);
-  sessionStorage.removeItem(REFRESH_KEY);
-  localStorage.removeItem(REMEMBER_KEY);
+  try {
+    localStorage.removeItem(ACCESS_KEY);
+    localStorage.removeItem(ACCESS_EXPIRES_KEY);
+    sessionStorage.removeItem(ACCESS_KEY);
+    sessionStorage.removeItem(ACCESS_EXPIRES_KEY);
+    localStorage.removeItem(REFRESH_KEY);
+    sessionStorage.removeItem(REFRESH_KEY);
+    localStorage.removeItem(REMEMBER_KEY);
+  } catch {
+    // ignore
+  }
 }
