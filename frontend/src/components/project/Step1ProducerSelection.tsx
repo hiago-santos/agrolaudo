@@ -1,11 +1,12 @@
 import { Check, MapPin, Plus, Search, UserCheck } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { ProducerFormDialog } from '@/components/producers/ProducerFormDialog';
 import { PropertyFormDialog } from '@/components/properties/PropertyFormDialog';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input, Label, Select } from '@/components/ui/Input';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { agronomistsService } from '@/services/agronomists';
 import { producersService } from '@/services/producers';
 import { seasonsService } from '@/services/seasons';
@@ -29,6 +30,9 @@ export function Step1ProducerSelection({ draft, onChange, onNext }: Step1Props) 
   const [agronomists, setAgronomists] = useState<Agronomist[]>([]);
   const [newProducerOpen, setNewProducerOpen] = useState(false);
   const [newPropertyOpen, setNewPropertyOpen] = useState(false);
+  const [highlighted, setHighlighted] = useState(0);
+  const listboxId = 'producer-search-results';
+  const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   useEffect(() => {
     void seasonsService.list().then((list) => {
@@ -53,7 +57,10 @@ export function Step1ProducerSelection({ draft, onChange, onNext }: Step1Props) 
     const timeout = setTimeout(() => {
       producersService
         .list({ search, pageSize: 8 })
-        .then((r) => setResults(r.items))
+        .then((r) => {
+          setResults(r.items);
+          setHighlighted(0);
+        })
         .finally(() => setSearching(false));
     }, 300);
     return () => clearTimeout(timeout);
@@ -66,6 +73,33 @@ export function Step1ProducerSelection({ draft, onChange, onNext }: Step1Props) 
     });
     setSearch('');
     setResults([]);
+  }
+
+  function onSearchKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
+    if (results.length === 0) return;
+
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      const offset = event.key === 'ArrowDown' ? 1 : -1;
+      const next = (highlighted + offset + results.length) % results.length;
+      setHighlighted(next);
+      optionRefs.current[next]?.scrollIntoView({ block: 'nearest' });
+      return;
+    }
+
+    if (event.key === 'Enter') {
+      const producer = results[highlighted];
+      if (producer) {
+        event.preventDefault();
+        selectProducer(producer);
+      }
+      return;
+    }
+
+    if (event.key === 'Escape') {
+      setResults([]);
+      setSearch('');
+    }
   }
 
   const canAdvance = !!draft.producer && !!draft.property && !!draft.season && !!draft.agronomistId;
@@ -94,27 +128,51 @@ export function Step1ProducerSelection({ draft, onChange, onNext }: Step1Props) 
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
+                onKeyDown={onSearchKeyDown}
                 placeholder="Buscar por nome ou CPF/CNPJ..."
                 className="pl-9"
+                role="combobox"
+                aria-expanded={!!search}
+                aria-controls={listboxId}
+                aria-autocomplete="list"
               />
             </div>
             {search && (
-              <div className="rounded-lg border border-border">
-                {searching && <p className="p-3 text-xs text-text-secondary">Buscando...</p>}
+              <div
+                id={listboxId}
+                role="listbox"
+                className="animate-menu-in overflow-hidden rounded-md border border-border bg-surface"
+              >
+                {searching && (
+                  <div className="space-y-2 p-3">
+                    <Skeleton className="h-4 w-2/3" />
+                    <Skeleton className="h-4 w-1/2" />
+                  </div>
+                )}
                 {!searching && results.length === 0 && (
                   <p className="p-3 text-xs text-text-secondary">Nenhum produtor encontrado.</p>
                 )}
-                {results.map((producer) => (
-                  <button
-                    key={producer.id}
-                    type="button"
-                    onClick={() => selectProducer(producer)}
-                    className="flex w-full items-center justify-between border-b border-border px-3 py-2 text-left text-sm last:border-0 hover:bg-bg-subtle"
-                  >
-                    <span className="font-medium text-text">{producer.name}</span>
-                    <span className="text-xs text-text-secondary">{producer.taxId}</span>
-                  </button>
-                ))}
+                {!searching &&
+                  results.map((producer, index) => (
+                    <button
+                      key={producer.id}
+                      ref={(element) => {
+                        optionRefs.current[index] = element;
+                      }}
+                      type="button"
+                      role="option"
+                      aria-selected={index === highlighted}
+                      onClick={() => selectProducer(producer)}
+                      onMouseEnter={() => setHighlighted(index)}
+                      className={cn(
+                        'flex w-full items-center justify-between gap-3 border-b border-border px-3 py-2 text-left text-sm transition-colors last:border-0',
+                        index === highlighted ? 'bg-accent-soft text-accent' : 'hover:bg-bg-subtle',
+                      )}
+                    >
+                      <span className="truncate font-medium text-text">{producer.name}</span>
+                      <span className="shrink-0 font-mono text-xs text-text-secondary">{producer.taxId}</span>
+                    </button>
+                  ))}
               </div>
             )}
             <Button type="button" variant="outline" size="sm" onClick={() => setNewProducerOpen(true)}>

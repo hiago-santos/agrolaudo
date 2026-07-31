@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Input, Select } from '@/components/ui/Input';
-import { PageSpinner } from '@/components/ui/Spinner';
+import { SkeletonTable } from '@/components/ui/Skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Table';
 import { formatCurrency, formatDate } from '@/lib/format';
 import { PROJECT_STATUS_LABEL, PROJECT_STATUS_TONE } from '@/lib/projectStatus';
@@ -70,7 +70,11 @@ export function History() {
             className="pl-9"
           />
         </div>
-        <Select value={status} onChange={(e) => setStatus(e.target.value as ProjectStatus | '')} className="sm:w-56">
+        <Select
+          value={status}
+          onChange={(e) => setStatus(e.target.value as ProjectStatus | '')}
+          containerClassName="sm:w-56"
+        >
           <option value="">Todos os status</option>
           {(Object.keys(PROJECT_STATUS_LABEL) as ProjectStatus[]).map((s) => (
             <option key={s} value={s}>
@@ -82,7 +86,7 @@ export function History() {
 
       <Card className="overflow-hidden">
         {loading ? (
-          <PageSpinner />
+          <SkeletonTable rows={8} columns={7} />
         ) : items.length === 0 ? (
           <div className="p-5">
             <EmptyState
@@ -93,7 +97,7 @@ export function History() {
           </div>
         ) : (
           <>
-            <Table>
+            <Table className="min-w-[720px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>Número</TableHead>
@@ -109,7 +113,10 @@ export function History() {
                 {items.map((project) => (
                   <TableRow key={project.id}>
                     <TableCell className="font-medium">
-                      <Link to={`/projects/${project.id}`} className="hover:text-accent hover:underline">
+                      <Link
+                        to={`/projects/${project.id}`}
+                        className="rounded-sm transition-colors hover:text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring"
+                      >
                         {project.number}
                       </Link>
                     </TableCell>
@@ -119,7 +126,9 @@ export function History() {
                     <TableCell>
                       <Badge tone={PROJECT_STATUS_TONE[project.status]}>{PROJECT_STATUS_LABEL[project.status]}</Badge>
                     </TableCell>
-                    <TableCell className="text-right font-medium">{formatCurrency(project.totalRevenue)}</TableCell>
+                    <TableCell className="text-right font-mono font-medium tabular-nums">
+                      {formatCurrency(project.totalRevenue)}
+                    </TableCell>
                     <TableCell className="text-text-secondary">{formatDate(project.createdAt)}</TableCell>
                   </TableRow>
                 ))}

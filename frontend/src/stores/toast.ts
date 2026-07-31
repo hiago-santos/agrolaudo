@@ -7,6 +7,7 @@ export interface ToastItem {
   variant: ToastVariant;
   title: string;
   description?: string;
+  leaving?: boolean;
 }
 
 interface ToastState {
@@ -15,16 +16,30 @@ interface ToastState {
   dismiss: (id: string) => void;
 }
 
-export const useToastStore = create<ToastState>((set) => ({
+const EXIT_MS = 140;
+const AUTO_DISMISS_MS = 5000;
+
+export const useToastStore = create<ToastState>((set, get) => ({
   toasts: [],
   push: (toast) => {
     const id = crypto.randomUUID();
     set((state) => ({ toasts: [...state.toasts, { ...toast, id }] }));
     setTimeout(() => {
-      set((state) => ({ toasts: state.toasts.filter((t) => t.id !== id) }));
-    }, 5000);
+      get().dismiss(id);
+    }, AUTO_DISMISS_MS);
   },
-  dismiss: (id) => set((state) => ({ toasts: state.toasts.filter((t) => t.id !== id) })),
+  dismiss: (id) => {
+    const current = get().toasts.find((t) => t.id === id);
+    if (!current || current.leaving) return;
+
+    set((state) => ({
+      toasts: state.toasts.map((t) => (t.id === id ? { ...t, leaving: true } : t)),
+    }));
+
+    setTimeout(() => {
+      set((state) => ({ toasts: state.toasts.filter((t) => t.id !== id) }));
+    }, EXIT_MS);
+  },
 }));
 
 export const toast = {

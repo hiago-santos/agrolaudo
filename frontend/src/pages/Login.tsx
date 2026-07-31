@@ -5,8 +5,8 @@ import { z } from 'zod';
 
 import { Button } from '@/components/ui/Button';
 import { FieldError, Input, Label } from '@/components/ui/Input';
+import { BootScreen } from '@/components/ui/BootScreen';
 import { Seal } from '@/components/ui/Seal';
-import { PageSpinner } from '@/components/ui/Spinner';
 import { useAuthStore } from '@/stores/auth';
 
 const loginSchema = z.object({
@@ -30,7 +30,7 @@ export function Login() {
     formState: { errors },
   } = useForm<LoginForm>({ resolver: zodResolver(loginSchema) });
 
-  if (!hydrated) return <PageSpinner />;
+  if (!hydrated) return <BootScreen />;
   if (isAuth) {
     const destination = (location.state as { from?: string } | null)?.from ?? '/';
     return <Navigate to={destination} replace />;

@@ -1,9 +1,10 @@
-import { CheckCircle2, ShieldCheck, Sprout, XCircle } from 'lucide-react';
+import { CheckCircle2, ShieldCheck, XCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 
 import { Card } from '@/components/ui/Card';
-import { PageSpinner } from '@/components/ui/Spinner';
+import { Seal } from '@/components/ui/Seal';
+import { SkeletonText } from '@/components/ui/Skeleton';
 import { formatCurrency, formatDate, formatDateTime } from '@/lib/format';
 import { PROJECT_STATUS_LABEL } from '@/lib/projectStatus';
 import { publicService, type PublicVerification } from '@/services/public';
@@ -29,22 +30,24 @@ export function VerifyPublic() {
 
   return (
     <div className="flex min-h-screen flex-col items-center bg-bg px-4 py-10">
-      <div className="mb-6 flex flex-col items-center gap-1 text-center">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent text-white">
-          <Sprout className="h-5 w-5" />
-        </div>
-        <h1 className="mt-2 text-lg font-semibold text-text">AgroLaudo</h1>
+      <div className="mb-8 flex flex-col items-center gap-1 text-center">
+        <Seal size="md" />
+        <h1 className="mt-3 font-display text-lg font-semibold text-text">AgroLaudo</h1>
         <p className="text-sm text-text-secondary">Verificação de autenticidade de documento</p>
       </div>
 
       <div className="w-full max-w-md">
-        {loading && <PageSpinner />}
+        {loading && (
+          <Card className="p-6">
+            <SkeletonText lines={6} />
+          </Card>
+        )}
 
         {!loading && (error || !data) && (
           <Card className="flex flex-col items-center gap-3 p-8 text-center">
             <XCircle className="h-9 w-9 text-danger" />
             <div>
-              <p className="text-sm font-semibold text-text">Documento não encontrado</p>
+              <p className="font-display text-sm font-semibold text-text">Documento não encontrado</p>
               <p className="mt-1 text-xs text-text-secondary">
                 Este código não corresponde a nenhum projeto assinado no AgroLaudo.
               </p>
@@ -57,8 +60,8 @@ export function VerifyPublic() {
             <div className="flex flex-col items-center gap-2 text-center">
               <CheckCircle2 className="h-9 w-9 text-success" />
               <div>
-                <p className="text-sm font-semibold text-text">Documento autêntico</p>
-                <p className="text-xs text-text-secondary">Projeto {data.number}</p>
+                <p className="font-display text-sm font-semibold text-text">Documento autêntico</p>
+                <p className="font-mono text-xs text-text-secondary">Projeto {data.number}</p>
               </div>
             </div>
 

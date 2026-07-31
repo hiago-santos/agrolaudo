@@ -29,6 +29,8 @@ interface ProducerFormDialogProps {
   onSaved: (producer: Producer) => void;
 }
 
+const FORM_ID = 'producer-form';
+
 export function ProducerFormDialog({ open, onClose, producer, onSaved }: ProducerFormDialogProps) {
   const {
     register,
@@ -78,15 +80,26 @@ export function ProducerFormDialog({ open, onClose, producer, onSaved }: Produce
       onClose={onClose}
       title={producer ? 'Editar produtor' : 'Novo produtor'}
       description="Cadastro único — nas próximas safras é só selecionar pelo nome ou CPF."
+      size="md"
+      footer={
+        <>
+          <Button type="button" variant="outline" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button type="submit" form={FORM_ID} loading={isSubmitting}>
+            Salvar
+          </Button>
+        </>
+      }
     >
-      <form onSubmit={(e) => void handleSubmit(onSubmit)(e)} className="space-y-4">
+      <form id={FORM_ID} onSubmit={(e) => void handleSubmit(onSubmit)(e)} className="space-y-4">
         <div>
           <Label htmlFor="name">Nome completo</Label>
           <Input id="name" {...register('name')} />
           <FieldError>{errors.name?.message}</FieldError>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <Label htmlFor="taxId">CPF/CNPJ</Label>
             <Input id="taxId" {...register('taxId')} />
@@ -102,7 +115,7 @@ export function ProducerFormDialog({ open, onClose, producer, onSaved }: Produce
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <Label htmlFor="phone">Telefone</Label>
             <Input id="phone" {...register('phone')} />
@@ -114,7 +127,7 @@ export function ProducerFormDialog({ open, onClose, producer, onSaved }: Produce
           </div>
         </div>
 
-        <div className="grid grid-cols-[1fr_80px] gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_80px]">
           <div>
             <Label htmlFor="city">Município</Label>
             <Input id="city" {...register('city')} />
@@ -125,15 +138,6 @@ export function ProducerFormDialog({ open, onClose, producer, onSaved }: Produce
             <Input id="state" maxLength={2} className="uppercase" {...register('state')} />
             <FieldError>{errors.state?.message}</FieldError>
           </div>
-        </div>
-
-        <div className="flex justify-end gap-2 pt-2">
-          <Button type="button" variant="outline" onClick={onClose}>
-            Cancelar
-          </Button>
-          <Button type="submit" loading={isSubmitting}>
-            Salvar
-          </Button>
         </div>
       </form>
     </Dialog>

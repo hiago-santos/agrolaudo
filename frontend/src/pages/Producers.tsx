@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Input } from '@/components/ui/Input';
-import { PageSpinner } from '@/components/ui/Spinner';
+import { SkeletonTable } from '@/components/ui/Skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Table';
 import { producersService } from '@/services/producers';
 import { useAuthStore } from '@/stores/auth';
@@ -77,7 +77,7 @@ export function Producers() {
 
       <Card className="overflow-hidden">
         {loading ? (
-          <PageSpinner />
+          <SkeletonTable rows={6} columns={5} />
         ) : producers.length === 0 ? (
           <div className="p-5">
             <EmptyState
@@ -101,7 +101,10 @@ export function Producers() {
               {producers.map((producer) => (
                 <TableRow key={producer.id}>
                   <TableCell className="font-medium">
-                    <Link to={`/producers/${producer.id}`} className="hover:text-accent hover:underline">
+                    <Link
+                      to={`/producers/${producer.id}`}
+                      className="rounded-sm transition-colors hover:text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring"
+                    >
                       {producer.name}
                     </Link>
                   </TableCell>

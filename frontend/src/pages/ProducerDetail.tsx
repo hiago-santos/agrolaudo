@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Button, buttonVariants } from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { PageSpinner } from '@/components/ui/Spinner';
+import { SkeletonCards, SkeletonPageHeader, SkeletonText } from '@/components/ui/Skeleton';
 import { formatNumber } from '@/lib/format';
 import { producersService } from '@/services/producers';
 import { useAuthStore } from '@/stores/auth';
@@ -48,14 +48,29 @@ export function ProducerDetail() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  if (loading) return <PageSpinner />;
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <SkeletonPageHeader />
+        <SkeletonCards count={3} className="sm:grid-cols-3" />
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Card className="p-5">
+            <SkeletonText lines={3} />
+          </Card>
+          <Card className="p-5">
+            <SkeletonText lines={3} />
+          </Card>
+        </div>
+      </div>
+    );
+  }
   if (!producer) return null;
 
   return (
     <div className="space-y-6">
       <Link
         to="/producers"
-        className="inline-flex items-center gap-1.5 text-xs font-medium text-text-secondary hover:text-accent"
+        className="inline-flex items-center gap-1.5 text-xs font-medium text-text-secondary transition-colors hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring"
       >
         <ArrowLeft className="h-3.5 w-3.5" />
         Voltar para produtores
@@ -122,7 +137,7 @@ export function ProducerDetail() {
             {producer.properties.map((property) => (
               <div
                 key={property.id}
-                className="rounded-xl border border-border p-4 transition-colors hover:border-accent/40"
+                className="rounded-lg border border-border p-4 transition-colors hover:border-accent/40 hover:bg-bg-subtle/40"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div>
@@ -135,7 +150,7 @@ export function ProducerDetail() {
                     <button
                       type="button"
                       onClick={() => setEditingProperty(property)}
-                      className="shrink-0 rounded-md p-1 text-text-tertiary hover:bg-bg-subtle hover:text-accent"
+                      className="shrink-0 rounded-md p-1 text-text-tertiary transition-colors hover:bg-bg-subtle hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring"
                       aria-label={`Editar ${property.name}`}
                     >
                       <Pencil className="h-3.5 w-3.5" />

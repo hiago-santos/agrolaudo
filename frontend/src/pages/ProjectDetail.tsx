@@ -1,4 +1,4 @@
-import { ArrowLeft, Ban, Copy, FileSpreadsheet, FileText, Send } from 'lucide-react';
+import { ArrowLeft, Ban, Copy, FileSpreadsheet, FileText, MoreHorizontal, Send } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 
@@ -10,8 +10,9 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Dialog } from '@/components/ui/Dialog';
+import { DropdownMenu, DropdownMenuItem } from '@/components/ui/DropdownMenu';
 import { Select } from '@/components/ui/Input';
-import { PageSpinner } from '@/components/ui/Spinner';
+import { SkeletonCards, SkeletonPageHeader, SkeletonTable } from '@/components/ui/Skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Table';
 import { ApiError } from '@/lib/api';
 import { formatCurrency, formatNumber, formatPercentage } from '@/lib/format';
@@ -105,7 +106,17 @@ export function ProjectDetail() {
     }
   }
 
-  if (loading) return <PageSpinner />;
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <SkeletonPageHeader />
+        <SkeletonCards count={4} />
+        <Card className="overflow-hidden">
+          <SkeletonTable rows={5} columns={8} />
+        </Card>
+      </div>
+    );
+  }
   if (!project) return null;
 
   const canCancel = canEdit && NON_TERMINAL.includes(project.status);
@@ -115,7 +126,7 @@ export function ProjectDetail() {
     <div className="space-y-6">
       <Link
         to="/history"
-        className="inline-flex items-center gap-1.5 text-xs font-medium text-text-secondary hover:text-accent"
+        className="inline-flex items-center gap-1.5 text-xs font-medium text-text-secondary transition-colors hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring"
       >
         <ArrowLeft className="h-3.5 w-3.5" />
         Voltar para o histórico
@@ -127,20 +138,35 @@ export function ProjectDetail() {
         actions={
           <>
             <Badge tone={PROJECT_STATUS_TONE[project.status]}>{PROJECT_STATUS_LABEL[project.status]}</Badge>
-            <Button variant="outline" size="sm" onClick={() => void projectsService.downloadXlsx(project.id, project.number)}>
-              <FileSpreadsheet className="h-3.5 w-3.5" />
-              XLSX
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => void projectsService.downloadPdf(project.id, project.number)}>
-              <FileText className="h-3.5 w-3.5" />
-              PDF
-            </Button>
-            {canEdit && (
-              <Button variant="outline" size="sm" onClick={() => void openDuplicate()}>
-                <Copy className="h-3.5 w-3.5" />
-                Duplicar
-              </Button>
-            )}
+            <DropdownMenu
+              label="Ações do projeto"
+              align="right"
+              triggerClassName="inline-flex h-8 items-center gap-1.5 rounded-md border border-border-strong bg-transparent px-3 text-xs font-medium text-text hover:bg-bg-subtle"
+              trigger={
+                <>
+                  <MoreHorizontal className="h-3.5 w-3.5" />
+                  Ações
+                </>
+              }
+            >
+              <DropdownMenuItem
+                onSelect={() => void projectsService.downloadXlsx(project.id, project.number)}
+                icon={<FileSpreadsheet className="h-4 w-4" />}
+              >
+                Baixar XLSX
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onSelect={() => void projectsService.downloadPdf(project.id, project.number)}
+                icon={<FileText className="h-4 w-4" />}
+              >
+                Baixar PDF
+              </DropdownMenuItem>
+              {canEdit && (
+                <DropdownMenuItem onSelect={() => void openDuplicate()} icon={<Copy className="h-4 w-4" />}>
+                  Duplicar
+                </DropdownMenuItem>
+              )}
+            </DropdownMenu>
             {canSubmitForReview && (
               <Button size="sm" onClick={() => void submitForReview()} loading={submitting}>
                 <Send className="h-3.5 w-3.5" />
@@ -181,7 +207,7 @@ export function ProjectDetail() {
         <div className="border-b border-border bg-bg-subtle/50 px-5 py-2.5">
           <h2 className="text-xs font-semibold uppercase tracking-wide text-text-secondary">Quadro de Produção</h2>
         </div>
-        <Table>
+        <Table className="min-w-[900px]">
           <TableHeader>
             <TableRow>
               <TableHead>Atividade</TableHead>
@@ -218,7 +244,22 @@ export function ProjectDetail() {
         </Card>
       )}
 
-      <Dialog open={duplicateOpen} onClose={() => setDuplicateOpen(false)} title="Duplicar projeto para outra safra">
+      <Dialog
+        open={duplicateOpen}
+        onClose={() => setDuplicateOpen(false)}
+        title="Duplicar projeto para outra safra"
+        size="sm"
+        footer={
+          <>
+            <Button variant="outline" onClick={() => setDuplicateOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={() => void confirmDuplicate()} disabled={!targetSeason} loading={duplicating}>
+              Duplicar
+            </Button>
+          </>
+        }
+      >
         <div className="space-y-4">
           <p className="text-sm text-text-secondary">
             As áreas e produtividades são reaproveitadas; preço e custo são atualizados com a matriz de preços atual.
@@ -235,14 +276,6 @@ export function ProjectDetail() {
                 </option>
               ))}
           </Select>
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setDuplicateOpen(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={() => void confirmDuplicate()} disabled={!targetSeason} loading={duplicating}>
-              Duplicar
-            </Button>
-          </div>
         </div>
       </Dialog>
     </div>

@@ -3,7 +3,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Label } from '@/components/ui/Input';
-import { PageSpinner, Spinner } from '@/components/ui/Spinner';
+import { Skeleton, SkeletonText } from '@/components/ui/Skeleton';
+import { Spinner } from '@/components/ui/Spinner';
 import { ACTIVITY_CATEGORY_LABEL, ACTIVITY_CATEGORY_ORDER } from '@/lib/activity-categories';
 import { formatCurrency, formatPercentage } from '@/lib/format';
 import { unitLabel } from '@/lib/units';
@@ -130,7 +131,28 @@ export function Step2Activities({ draft, onChange, onNext, onBack }: Step2Props)
   const resultByActivity = new Map(result?.items.map((i) => [i.activityId, i]) ?? []);
   const canAdvance = selected.length > 0 && !!result;
 
-  if (loading) return <PageSpinner />;
+  if (loading) {
+    return (
+      <Card className="p-5">
+        <SkeletonText lines={2} />
+        <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          {[
+            'a1',
+            'a2',
+            'a3',
+            'a4',
+            'a5',
+            'a6',
+            'a7',
+            'a8',
+            'a9',
+          ].map((key) => (
+            <Skeleton key={key} className="h-10 w-full" />
+          ))}
+        </div>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6 pb-24">
@@ -224,7 +246,7 @@ export function Step2Activities({ draft, onChange, onNext, onBack }: Step2Props)
         </div>
       )}
 
-      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-surface/95 backdrop-blur-md md:pl-[236px]">
+      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-surface md:pl-[var(--sidebar-width)]">
         <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between md:px-8">
           <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-xs sm:flex sm:gap-6">
             <Summary
@@ -276,7 +298,7 @@ function NumberField({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder="0"
-        className="h-9 w-full rounded-lg border border-border-strong bg-surface px-2.5 text-sm focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-ring"
+        className="h-9 w-full rounded-md border border-border-strong bg-surface px-2.5 font-mono text-sm tabular-nums focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-ring"
       />
     </div>
   );

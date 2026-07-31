@@ -6,8 +6,8 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Dialog } from '@/components/ui/Dialog';
-import { Select } from '@/components/ui/Input';
-import { PageSpinner } from '@/components/ui/Spinner';
+import { Input, Select } from '@/components/ui/Input';
+import { SkeletonPageHeader, SkeletonTable } from '@/components/ui/Skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Table';
 import { ApiError } from '@/lib/api';
 import { ACTIVITY_CATEGORY_LABEL, ACTIVITY_CATEGORY_ORDER } from '@/lib/activity-categories';
@@ -143,7 +143,19 @@ export function Prices() {
     }
   }
 
-  if (loading) return <PageSpinner />;
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <SkeletonPageHeader />
+        <Card className="overflow-hidden">
+          <SkeletonTable rows={5} columns={5} />
+        </Card>
+        <Card className="overflow-hidden">
+          <SkeletonTable rows={5} columns={5} />
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -163,7 +175,7 @@ export function Prices() {
             </Button>
             <Button size="sm" onClick={() => void save()} loading={saving}>
               <Save className="h-3.5 w-3.5" />
-              Salvar Novas Cotações
+              Salvar novas cotações
             </Button>
           </>
         }
@@ -176,7 +188,7 @@ export function Prices() {
               {ACTIVITY_CATEGORY_LABEL[group.category]}
             </h2>
           </div>
-          <Table>
+          <Table className="min-w-[720px]">
             <TableHeader>
               <TableRow>
                 <TableHead>Atividade</TableHead>
@@ -197,7 +209,8 @@ export function Prices() {
                       <Select
                         value={row.unit}
                         onChange={(e) => updateRow(item.activity.id, 'unit', e.target.value)}
-                        className="h-8 w-40 text-xs"
+                        containerClassName="w-40"
+                        className="h-8 text-xs"
                       >
                         {item.activity.allowedUnits.map((u) => (
                           <option key={u} value={u}>
@@ -207,30 +220,30 @@ export function Prices() {
                       </Select>
                     </TableCell>
                     <TableCell className="text-right">
-                      <input
+                      <Input
                         type="number"
                         step="0.01"
                         min="0"
                         value={row.unitPrice}
                         onChange={(e) => updateRow(item.activity.id, 'unitPrice', e.target.value)}
-                        className="h-8 w-28 rounded-md border border-border-strong bg-surface px-2 text-right text-sm focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-ring"
+                        className="ml-auto h-8 w-28 text-right font-mono tabular-nums"
                       />
                     </TableCell>
                     <TableCell className="text-right">
-                      <input
+                      <Input
                         type="number"
                         step="0.01"
                         min="0"
                         value={row.costPerHectare}
                         onChange={(e) => updateRow(item.activity.id, 'costPerHectare', e.target.value)}
-                        className="h-8 w-28 rounded-md border border-border-strong bg-surface px-2 text-right text-sm focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-ring"
+                        className="ml-auto h-8 w-28 text-right font-mono tabular-nums"
                       />
                     </TableCell>
                     <TableCell>
                       <button
                         type="button"
                         onClick={() => void openHistory(item)}
-                        className="rounded-md p-1.5 text-text-tertiary hover:bg-bg-subtle hover:text-accent"
+                        className="rounded-md p-1.5 text-text-tertiary transition-colors hover:bg-bg-subtle hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring"
                         aria-label={`Histórico de ${item.activity.name}`}
                       >
                         <History className="h-4 w-4" />
@@ -249,6 +262,7 @@ export function Prices() {
         onClose={() => setHistoryOpenFor(null)}
         title={`Histórico — ${historyOpenFor?.activity.name ?? ''}`}
         description="Cotações anteriores, mais recente primeiro"
+        size="sm"
       >
         {history.length === 0 ? (
           <p className="text-sm text-text-secondary">Sem histórico registrado ainda.</p>
@@ -257,7 +271,7 @@ export function Prices() {
             {history.map((h) => (
               <li key={h.id} className="flex items-center justify-between rounded-lg border border-border px-3 py-2 text-sm">
                 <div>
-                  <p className="font-medium text-text">
+                  <p className="font-mono font-medium tabular-nums text-text">
                     {formatCurrency(h.unitPrice)} / {unitLabel(h.unit)}
                   </p>
                   <p className="text-xs text-text-secondary">Custo/ha: {formatCurrency(h.costPerHectare)}</p>

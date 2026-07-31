@@ -21,7 +21,7 @@ export function StepIndicator({ current }: { current: number }) {
         const active = step.number === current;
         return (
           <li key={step.number} className="flex flex-1 items-center gap-2 sm:gap-4">
-            <div className="flex items-center gap-2">
+            <div className="flex min-w-0 items-center gap-2">
               <div
                 className={cn(
                   'flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-colors',
@@ -34,7 +34,8 @@ export function StepIndicator({ current }: { current: number }) {
               </div>
               <span
                 className={cn(
-                  'hidden text-xs font-medium sm:block',
+                  'truncate text-xs font-medium',
+                  active ? 'block' : 'hidden sm:block',
                   active || done ? 'text-text' : 'text-text-tertiary',
                 )}
               >

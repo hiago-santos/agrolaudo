@@ -1,12 +1,13 @@
-import { CheckCircle2, PenLine, Sprout, XCircle } from 'lucide-react';
+import { CheckCircle2, PenLine, XCircle } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 
 import { SignaturePad, type SignaturePadHandle } from '@/components/project/SignaturePad';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { Seal } from '@/components/ui/Seal';
+import { SkeletonTable, SkeletonText } from '@/components/ui/Skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Table';
-import { PageSpinner } from '@/components/ui/Spinner';
 import { ApiError } from '@/lib/api';
 import { formatCurrency } from '@/lib/format';
 import { unitLabel } from '@/lib/units';
@@ -56,16 +57,21 @@ export function SignPublic() {
 
   return (
     <div className="min-h-screen bg-bg px-4 py-8">
-      <div className="mx-auto flex max-w-2xl flex-col items-center gap-1 pb-6 text-center">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent text-white">
-          <Sprout className="h-5 w-5" />
-        </div>
-        <h1 className="mt-2 text-lg font-semibold text-text">AgroLaudo</h1>
+      <div className="mx-auto flex max-w-2xl flex-col items-center gap-1 pb-8 text-center">
+        <Seal size="md" />
+        <h1 className="mt-3 font-display text-lg font-semibold text-text">AgroLaudo</h1>
         <p className="text-sm text-text-secondary">Assinatura digital do Laudo de Capacidade Pagadora</p>
       </div>
 
       <div className="mx-auto max-w-2xl">
-        {loading && <PageSpinner />}
+        {loading && (
+          <Card className="overflow-hidden">
+            <div className="space-y-4 p-5">
+              <SkeletonText lines={3} />
+            </div>
+            <SkeletonTable rows={3} columns={3} />
+          </Card>
+        )}
 
         {!loading && error && (
           <Card className="flex flex-col items-center gap-2 p-8 text-center">
@@ -77,7 +83,7 @@ export function SignPublic() {
         {!loading && data && !error && (signed || data.alreadySigned) && (
           <Card className="flex flex-col items-center gap-2 p-8 text-center">
             <CheckCircle2 className="h-8 w-8 text-success" />
-            <p className="text-sm font-medium text-text">Assinatura registrada com sucesso.</p>
+            <p className="font-display text-sm font-medium text-text">Assinatura registrada com sucesso.</p>
             <p className="text-xs text-text-secondary">
               O projeto {data.project.number} foi atualizado. Pode fechar esta página.
             </p>
@@ -93,12 +99,12 @@ export function SignPublic() {
                 </h2>
               </div>
               <div className="space-y-1 p-5 text-sm">
-                <p className="font-medium text-text">{data.project.number}</p>
+                <p className="font-mono font-medium text-text">{data.project.number}</p>
                 <p className="text-text-secondary">
                   {data.project.producer.name} · {data.project.property.name} · Safra {data.project.season.label}
                 </p>
               </div>
-              <Table>
+              <Table className="min-w-[480px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Atividade</TableHead>
@@ -111,14 +117,18 @@ export function SignPublic() {
                     <TableRow key={item.id}>
                       <TableCell className="font-medium">{item.activityName}</TableCell>
                       <TableCell className="text-text-secondary">{unitLabel(item.unit)}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(item.netProfit)}</TableCell>
+                      <TableCell className="text-right font-mono tabular-nums">
+                        {formatCurrency(item.netProfit)}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
               <div className="flex items-center justify-between border-t border-border px-5 py-3 text-sm">
                 <span className="text-text-secondary">Receita líquida total</span>
-                <span className="font-semibold text-accent">{formatCurrency(data.project.totalProfit)}</span>
+                <span className="font-mono font-semibold tabular-nums text-accent">
+                  {formatCurrency(data.project.totalProfit)}
+                </span>
               </div>
             </Card>
 

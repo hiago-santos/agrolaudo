@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Label, Textarea } from '@/components/ui/Input';
-import { PageSpinner } from '@/components/ui/Spinner';
+import { SkeletonTable } from '@/components/ui/Skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Table';
 import { ApiError } from '@/lib/api';
 import { formatCurrency, formatPercentage } from '@/lib/format';
@@ -90,10 +90,10 @@ export function Step3Review({ draft, onChange, onBack }: Step3Props) {
           </h2>
         </div>
         {loadingResult ? (
-          <PageSpinner />
+          <SkeletonTable rows={4} columns={5} />
         ) : (
           <>
-            <Table>
+            <Table className="min-w-[640px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>Atividade</TableHead>

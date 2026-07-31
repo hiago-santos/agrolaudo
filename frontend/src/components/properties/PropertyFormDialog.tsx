@@ -30,6 +30,8 @@ interface PropertyFormDialogProps {
   onSaved: (property: Property) => void;
 }
 
+const FORM_ID = 'property-form';
+
 export function PropertyFormDialog({
   open,
   onClose,
@@ -89,15 +91,30 @@ export function PropertyFormDialog({
   }
 
   return (
-    <Dialog open={open} onClose={onClose} title={property ? 'Editar propriedade' : 'Nova propriedade'}>
-      <form onSubmit={(e) => void handleSubmit(onSubmit)(e)} className="space-y-4">
+    <Dialog
+      open={open}
+      onClose={onClose}
+      title={property ? 'Editar propriedade' : 'Nova propriedade'}
+      size="md"
+      footer={
+        <>
+          <Button type="button" variant="outline" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button type="submit" form={FORM_ID} loading={isSubmitting}>
+            Salvar
+          </Button>
+        </>
+      }
+    >
+      <form id={FORM_ID} onSubmit={(e) => void handleSubmit(onSubmit)(e)} className="space-y-4">
         <div>
           <Label htmlFor="name">Nome da fazenda</Label>
           <Input id="name" {...register('name')} />
           <FieldError>{errors.name?.message}</FieldError>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <Label htmlFor="registrationNumber">Matrícula</Label>
             <Input id="registrationNumber" {...register('registrationNumber')} />
@@ -110,7 +127,7 @@ export function PropertyFormDialog({
           </div>
         </div>
 
-        <div className="grid grid-cols-[1fr_80px] gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_80px]">
           <div>
             <Label htmlFor="city">Município</Label>
             <Input id="city" {...register('city')} />
@@ -123,7 +140,7 @@ export function PropertyFormDialog({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <Label htmlFor="stateRegistration">Inscrição Estadual</Label>
             <Input id="stateRegistration" {...register('stateRegistration')} />
@@ -132,15 +149,6 @@ export function PropertyFormDialog({
             <Label htmlFor="ruralEnvironmentalRegistry">CAR</Label>
             <Input id="ruralEnvironmentalRegistry" {...register('ruralEnvironmentalRegistry')} />
           </div>
-        </div>
-
-        <div className="flex justify-end gap-2 pt-2">
-          <Button type="button" variant="outline" onClick={onClose}>
-            Cancelar
-          </Button>
-          <Button type="submit" loading={isSubmitting}>
-            Salvar
-          </Button>
         </div>
       </form>
     </Dialog>

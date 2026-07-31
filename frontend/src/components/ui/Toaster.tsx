@@ -28,7 +28,7 @@ export function Toaster() {
   if (toasts.length === 0) return null;
 
   return (
-    <div className="pointer-events-none fixed bottom-4 right-4 z-50 flex w-full max-w-sm flex-col gap-2">
+    <div className="pointer-events-none fixed bottom-4 right-4 z-50 flex w-full max-w-sm flex-col gap-2 px-4 sm:px-0">
       {toasts.map((t) => {
         const Icon = ICON[t.variant];
         return (
@@ -37,7 +37,7 @@ export function Toaster() {
             role="status"
             className={cn(
               'pointer-events-auto flex items-start gap-3 rounded-lg border p-3',
-              'animate-page-enter',
+              t.leaving ? 'animate-fade-out' : 'animate-page-enter',
               ESTILO[t.variant],
             )}
           >
@@ -51,7 +51,7 @@ export function Toaster() {
             <button
               type="button"
               onClick={() => dismiss(t.id)}
-              className="shrink-0 rounded-md p-0.5 text-text-tertiary hover:bg-bg-subtle"
+              className="shrink-0 rounded-md p-0.5 text-text-tertiary transition-colors hover:bg-bg-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring"
               aria-label="Fechar notificação"
             >
               <X className="h-3.5 w-3.5" />

@@ -34,7 +34,7 @@ export function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarProps) {
       )}
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-50 flex w-[240px] shrink-0 flex-col border-r border-border bg-surface',
+          'fixed inset-y-0 left-0 z-50 flex w-[var(--sidebar-width)] shrink-0 flex-col border-r border-border bg-surface',
           'transition-transform duration-200 md:static md:z-auto md:translate-x-0',
           mobileOpen ? 'translate-x-0' : '-translate-x-full',
         )}
@@ -52,7 +52,7 @@ export function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarProps) {
           <button
             type="button"
             onClick={onCloseMobile}
-            className="rounded-md p-1 text-text-tertiary hover:bg-bg-subtle md:hidden"
+            className="rounded-md p-1 text-text-tertiary transition-colors hover:bg-bg-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring md:hidden"
             aria-label="Fechar menu"
           >
             <X className="h-4 w-4" />
@@ -68,9 +68,10 @@ export function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarProps) {
               onClick={onCloseMobile}
               className={({ isActive }) =>
                 cn(
-                  'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                  'relative flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring',
                   isActive
-                    ? 'border border-accent/20 bg-accent-soft text-accent'
+                    ? 'bg-accent-soft text-accent before:absolute before:inset-y-1.5 before:left-0 before:w-[3px] before:rounded-full before:bg-accent'
                     : 'text-text-secondary hover:bg-bg-subtle hover:text-text',
                 )
               }

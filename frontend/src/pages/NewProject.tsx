@@ -39,11 +39,13 @@ export function NewProject() {
 
       <StepIndicator current={step} />
 
-      {step === 1 && <Step1ProducerSelection draft={draft} onChange={onChange} onNext={() => setStep(2)} />}
-      {step === 2 && (
-        <Step2Activities draft={draft} onChange={onChange} onNext={() => setStep(3)} onBack={() => setStep(1)} />
-      )}
-      {step === 3 && <Step3Review draft={draft} onChange={onChange} onBack={() => setStep(2)} />}
+      <div key={step} className="animate-page-enter">
+        {step === 1 && <Step1ProducerSelection draft={draft} onChange={onChange} onNext={() => setStep(2)} />}
+        {step === 2 && (
+          <Step2Activities draft={draft} onChange={onChange} onNext={() => setStep(3)} onBack={() => setStep(1)} />
+        )}
+        {step === 3 && <Step3Review draft={draft} onChange={onChange} onBack={() => setStep(2)} />}
+      </div>
     </div>
   );
 }

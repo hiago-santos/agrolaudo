@@ -1,14 +1,14 @@
 import type { ReactElement } from 'react';
 import { Navigate } from 'react-router-dom';
 
-import { PageSpinner } from '@/components/ui/Spinner';
+import { BootScreen } from '@/components/ui/BootScreen';
 import { useAuthStore } from '@/stores/auth';
 
 export function ProtectedRoute({ children }: { children: ReactElement }) {
   const isAuth = useAuthStore((s) => s.isAuthenticated());
   const hydrated = useAuthStore((s) => s.hydrated);
 
-  if (!hydrated) return <PageSpinner />;
+  if (!hydrated) return <BootScreen />;
   if (!isAuth) return <Navigate to="/login" replace />;
   return children;
 }

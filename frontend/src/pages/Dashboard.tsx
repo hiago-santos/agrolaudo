@@ -1,4 +1,4 @@
-import { FilePlus2, FileStack, Landmark, TrendingUp, Users } from 'lucide-react';
+import { FilePlus2, FileStack } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/Badge';
 import { buttonVariants } from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { PageSpinner } from '@/components/ui/Spinner';
+import { SkeletonCards, SkeletonList, SkeletonPageHeader } from '@/components/ui/Skeleton';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { formatCurrency } from '@/lib/format';
 import { PROJECT_STATUS_LABEL, PROJECT_STATUS_TONE } from '@/lib/projectStatus';
@@ -36,15 +36,25 @@ export function Dashboard() {
     };
   }, []);
 
-  if (loading) return <PageSpinner />;
+  if (loading) {
+    return (
+      <div className="space-y-8">
+        <SkeletonPageHeader />
+        <SkeletonCards count={5} className="sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5" />
+        <Card>
+          <SkeletonList rows={5} />
+        </Card>
+      </div>
+    );
+  }
   if (!summary) return null;
 
   const kpis = [
-    { label: 'Projetos no mês', value: String(summary.projectsThisMonth), icon: FileStack },
-    { label: 'Aguardando assinatura', value: String(summary.pendingSignaturesCount), icon: FilePlus2 },
-    { label: 'Em análise no banco', value: String(summary.underBankReviewCount), icon: Landmark },
-    { label: 'Produtores cadastrados', value: String(summary.activeProducersCount), icon: Users },
-    { label: 'Faturamento no mês', value: formatCurrency(summary.revenueThisMonth), icon: TrendingUp },
+    { label: 'Projetos no mês', value: String(summary.projectsThisMonth) },
+    { label: 'Aguardando assinatura', value: String(summary.pendingSignaturesCount) },
+    { label: 'Em análise no banco', value: String(summary.underBankReviewCount) },
+    { label: 'Produtores cadastrados', value: String(summary.activeProducersCount) },
+    { label: 'Faturamento no mês', value: formatCurrency(summary.revenueThisMonth) },
   ];
 
   return (
@@ -60,7 +70,7 @@ export function Dashboard() {
         }
       />
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         {kpis.map((kpi, index) => (
           <Card key={kpi.label} accent={KPI_ACCENTS[index] ?? 'neutral'}>
             <CardContent className="p-4">
@@ -105,7 +115,7 @@ export function Dashboard() {
               <li key={project.id} className="border-b border-border last:border-0">
                 <Link
                   to={`/projects/${project.id}`}
-                  className="flex items-center justify-between gap-4 px-5 py-3.5 text-sm transition-colors hover:bg-bg-subtle"
+                  className="flex items-center justify-between gap-4 px-5 py-3.5 text-sm transition-colors hover:bg-bg-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring focus-visible:ring-inset"
                 >
                   <div className="min-w-0">
                     <p className="truncate font-medium text-text">{project.producer.name}</p>
