@@ -89,10 +89,10 @@ export function Dashboard() {
         <div className="flex items-center justify-between border-b border-border px-5 py-4">
           <h2 className="font-display text-sm font-semibold text-text">Últimos projetos</h2>
           <Link
-            to="/history"
+            to="/projects"
             className="text-xs font-medium uppercase tracking-wide text-accent hover:underline"
           >
-            Ver histórico
+            Ver todos os projetos
           </Link>
         </div>
 

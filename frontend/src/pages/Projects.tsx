@@ -1,10 +1,10 @@
-import { ChevronLeft, ChevronRight, FileStack, Search } from 'lucide-react';
+import { ChevronLeft, ChevronRight, FilePlus2, FileStack, Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Badge } from '@/components/ui/Badge';
-import { Button } from '@/components/ui/Button';
+import { Button, buttonVariants } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Input, Select } from '@/components/ui/Input';
@@ -12,19 +12,33 @@ import { SkeletonTable } from '@/components/ui/Skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Table';
 import { formatCurrency, formatDate } from '@/lib/format';
 import { PROJECT_STATUS_LABEL, PROJECT_STATUS_TONE } from '@/lib/projectStatus';
+import { agronomistsService } from '@/services/agronomists';
+import { producersService } from '@/services/producers';
 import { projectsService } from '@/services/projects';
+import { seasonsService } from '@/services/seasons';
+import { useAuthStore } from '@/stores/auth';
 import { toast } from '@/stores/toast';
-import type { ProjectStatus, ProjectSummary } from '@/types/domain';
+import type { Agronomist, Producer, ProjectStatus, ProjectSummary, Season } from '@/types/domain';
 
 const PAGE_SIZE = 15;
 
-export function History() {
+export function Projects() {
+  const canCreate = useAuthStore((s) => s.hasRole('ADMIN', 'AGRONOMIST'));
+
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<ProjectStatus | ''>('');
+  const [producerId, setProducerId] = useState('');
+  const [seasonId, setSeasonId] = useState('');
+  const [agronomistId, setAgronomistId] = useState('');
   const [page, setPage] = useState(1);
+
   const [items, setItems] = useState<ProjectSummary[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+
+  const [producers, setProducers] = useState<Producer[]>([]);
+  const [seasons, setSeasons] = useState<Season[]>([]);
+  const [agronomists, setAgronomists] = useState<Agronomist[]>([]);
 
   async function load() {
     setLoading(true);
@@ -32,36 +46,61 @@ export function History() {
       const result = await projectsService.list({
         search: search || undefined,
         status: status || undefined,
+        producerId: producerId || undefined,
+        seasonId: seasonId || undefined,
+        agronomistId: agronomistId || undefined,
         page,
         pageSize: PAGE_SIZE,
       });
       setItems(result.items);
       setTotal(result.total);
     } catch {
-      toast.error('Não foi possível carregar o histórico.');
+      toast.error('Não foi possível carregar os projetos.');
     } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
+    Promise.all([producersService.list({ pageSize: 100 }), seasonsService.list(), agronomistsService.list()])
+      .then(([producersResult, seasonsResult, agronomistsResult]) => {
+        setProducers(producersResult.items);
+        setSeasons(seasonsResult);
+        setAgronomists(agronomistsResult);
+      })
+      .catch(() => toast.error('Não foi possível carregar os filtros.'));
+  }, []);
+
+  useEffect(() => {
     const timeout = setTimeout(() => void load(), search ? 350 : 0);
     return () => clearTimeout(timeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, status, page]);
+  }, [search, status, producerId, seasonId, agronomistId, page]);
 
   useEffect(() => {
     setPage(1);
-  }, [search, status]);
+  }, [search, status, producerId, seasonId, agronomistId]);
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const hasFilters = !!(search || status || producerId || seasonId || agronomistId);
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Histórico" description="Todos os projetos emitidos — busque, filtre e reabra qualquer um." />
+      <PageHeader
+        title="Projetos"
+        description="Todos os projetos emitidos — busque, filtre e reabra qualquer um."
+        actions={
+          canCreate && (
+            <Link to="/projects/new" className={buttonVariants('primary', 'md')}>
+              <FilePlus2 className="h-4 w-4" />
+              Novo Projeto
+            </Link>
+          )
+        }
+      />
 
-      <div className="flex flex-col gap-3 sm:flex-row">
-        <div className="relative flex-1 sm:max-w-sm">
+      <div className="flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-center">
+        <div className="relative flex-1 lg:min-w-[240px]">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-tertiary" />
           <Input
             value={search}
@@ -73,7 +112,7 @@ export function History() {
         <Select
           value={status}
           onChange={(next) => setStatus(next as ProjectStatus | '')}
-          containerClassName="sm:w-56"
+          containerClassName="lg:w-48"
           placeholder="Todos os status"
           options={[
             { value: '', label: 'Todos os status' },
@@ -81,6 +120,36 @@ export function History() {
               value: s,
               label: PROJECT_STATUS_LABEL[s],
             })),
+          ]}
+        />
+        <Select
+          value={producerId}
+          onChange={setProducerId}
+          containerClassName="lg:w-56"
+          placeholder="Todos os produtores"
+          options={[
+            { value: '', label: 'Todos os produtores' },
+            ...producers.map((p) => ({ value: p.id, label: p.name })),
+          ]}
+        />
+        <Select
+          value={seasonId}
+          onChange={setSeasonId}
+          containerClassName="lg:w-40"
+          placeholder="Todas as safras"
+          options={[
+            { value: '', label: 'Todas as safras' },
+            ...seasons.map((s) => ({ value: s.id, label: s.label })),
+          ]}
+        />
+        <Select
+          value={agronomistId}
+          onChange={setAgronomistId}
+          containerClassName="lg:w-52"
+          placeholder="Todos os agrônomos"
+          options={[
+            { value: '', label: 'Todos os agrônomos' },
+            ...agronomists.map((a) => ({ value: a.id, label: a.name })),
           ]}
         />
       </div>
@@ -93,7 +162,7 @@ export function History() {
             <EmptyState
               icon={FileStack}
               title="Nenhum projeto encontrado"
-              description="Ajuste a busca/filtro ou emita um novo projeto."
+              description={hasFilters ? 'Ajuste a busca/filtros ou emita um novo projeto.' : 'Emita o primeiro projeto.'}
             />
           </div>
         ) : (

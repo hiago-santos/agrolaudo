@@ -125,11 +125,11 @@ export function ProjectDetail() {
   return (
     <div className="space-y-6">
       <Link
-        to="/history"
+        to="/projects"
         className="inline-flex items-center gap-1.5 text-xs font-medium text-text-secondary transition-colors hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring"
       >
         <ArrowLeft className="h-3.5 w-3.5" />
-        Voltar para o histórico
+        Voltar para projetos
       </Link>
 
       <PageHeader
