@@ -225,17 +225,13 @@ export function Step1ProducerSelection({ draft, onChange, onNext }: Step1Props) 
           <Select
             id="season"
             value={draft.season?.id ?? ''}
-            onChange={(e) => onChange({ season: seasons.find((s) => s.id === e.target.value) ?? null })}
-          >
-            <option value="" disabled>
-              Selecione a safra
-            </option>
-            {seasons.map((season) => (
-              <option key={season.id} value={season.id}>
-                {season.label}
-              </option>
-            ))}
-          </Select>
+            onChange={(next) => onChange({ season: seasons.find((s) => s.id === next) ?? null })}
+            placeholder="Selecione a safra"
+            options={seasons.map((season) => ({
+              value: season.id,
+              label: season.label,
+            }))}
+          />
         </div>
 
         {user?.role === 'ADMIN' && (
@@ -244,17 +240,14 @@ export function Step1ProducerSelection({ draft, onChange, onNext }: Step1Props) 
             <Select
               id="agronomist"
               value={draft.agronomistId ?? ''}
-              onChange={(e) => onChange({ agronomistId: e.target.value || null })}
-            >
-              <option value="" disabled>
-                Selecione o agrônomo
-              </option>
-              {agronomists.map((agronomist) => (
-                <option key={agronomist.id} value={agronomist.id}>
-                  {agronomist.name} — {agronomist.licenseNumber}
-                </option>
-              ))}
-            </Select>
+              onChange={(next) => onChange({ agronomistId: next || null })}
+              placeholder="Selecione o agrônomo"
+              options={agronomists.map((agronomist) => ({
+                value: agronomist.id,
+                label: `${agronomist.name} — ${agronomist.licenseNumber}`,
+                searchLabel: `${agronomist.name} ${agronomist.licenseNumber}`,
+              }))}
+            />
           </div>
         )}
       </Card>

@@ -72,16 +72,17 @@ export function History() {
         </div>
         <Select
           value={status}
-          onChange={(e) => setStatus(e.target.value as ProjectStatus | '')}
+          onChange={(next) => setStatus(next as ProjectStatus | '')}
           containerClassName="sm:w-56"
-        >
-          <option value="">Todos os status</option>
-          {(Object.keys(PROJECT_STATUS_LABEL) as ProjectStatus[]).map((s) => (
-            <option key={s} value={s}>
-              {PROJECT_STATUS_LABEL[s]}
-            </option>
-          ))}
-        </Select>
+          placeholder="Todos os status"
+          options={[
+            { value: '', label: 'Todos os status' },
+            ...(Object.keys(PROJECT_STATUS_LABEL) as ProjectStatus[]).map((s) => ({
+              value: s,
+              label: PROJECT_STATUS_LABEL[s],
+            })),
+          ]}
+        />
       </div>
 
       <Card className="overflow-hidden">

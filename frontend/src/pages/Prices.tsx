@@ -208,16 +208,14 @@ export function Prices() {
                     <TableCell>
                       <Select
                         value={row.unit}
-                        onChange={(e) => updateRow(item.activity.id, 'unit', e.target.value)}
+                        onChange={(next) => updateRow(item.activity.id, 'unit', next)}
                         containerClassName="w-40"
-                        className="h-8 text-xs"
-                      >
-                        {item.activity.allowedUnits.map((u) => (
-                          <option key={u} value={u}>
-                            {unitLabel(u)}
-                          </option>
-                        ))}
-                      </Select>
+                        size="sm"
+                        options={item.activity.allowedUnits.map((u) => ({
+                          value: u,
+                          label: unitLabel(u),
+                        }))}
+                      />
                     </TableCell>
                     <TableCell className="text-right">
                       <Input

@@ -36,11 +36,15 @@ export function ProducerFormDialog({ open, onClose, producer, onSaved }: Produce
     register,
     handleSubmit,
     reset,
+    setValue,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: { classification: 'OTHER' },
   });
+
+  const classification = watch('classification');
 
   useEffect(() => {
     if (open) {
@@ -107,11 +111,22 @@ export function ProducerFormDialog({ open, onClose, producer, onSaved }: Produce
           </div>
           <div>
             <Label htmlFor="classification">Classificação</Label>
-            <Select id="classification" {...register('classification')}>
-              <option value="OTHER">Demais</option>
-              <option value="PRONAF">PRONAF</option>
-              <option value="PRONAMP">PRONAMP</option>
-            </Select>
+            <Select
+              id="classification"
+              name="classification"
+              value={classification}
+              onChange={(next) =>
+                setValue('classification', next as FormValues['classification'], {
+                  shouldValidate: true,
+                  shouldDirty: true,
+                })
+              }
+              options={[
+                { value: 'OTHER', label: 'Demais' },
+                { value: 'PRONAF', label: 'PRONAF' },
+                { value: 'PRONAMP', label: 'PRONAMP' },
+              ]}
+            />
           </div>
         </div>
 

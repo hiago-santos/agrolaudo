@@ -1,13 +1,13 @@
-import { ChevronDown } from 'lucide-react';
 import { forwardRef } from 'react';
 import type {
   InputHTMLAttributes,
   LabelHTMLAttributes,
-  SelectHTMLAttributes,
   TextareaHTMLAttributes,
 } from 'react';
 
 import { cn } from '@/lib/cn';
+
+export { Select, type SelectOption } from '@/components/ui/Select';
 
 const FIELD_BASE = cn(
   'w-full rounded-md border border-border-strong bg-surface px-3 text-sm text-text placeholder:text-text-tertiary',
@@ -29,35 +29,6 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes<H
   ),
 );
 Textarea.displayName = 'Textarea';
-
-interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
-  /** Classes de layout (largura) — o chevron acompanha a borda do campo. */
-  containerClassName?: string;
-}
-
-export const Select = forwardRef<HTMLSelectElement, SelectProps>(
-  ({ className, containerClassName, children, ...props }, ref) => (
-    <div className={cn('relative inline-flex w-full items-center', containerClassName)}>
-      <select
-        ref={ref}
-        className={cn(
-          FIELD_BASE,
-          'h-9 cursor-pointer appearance-none pr-9',
-          'hover:border-accent/50',
-          className,
-        )}
-        {...props}
-      >
-        {children}
-      </select>
-      <ChevronDown
-        aria-hidden
-        className="pointer-events-none absolute right-3 h-4 w-4 text-text-tertiary"
-      />
-    </div>
-  ),
-);
-Select.displayName = 'Select';
 
 export function Label({ className, ...props }: LabelHTMLAttributes<HTMLLabelElement>) {
   return (

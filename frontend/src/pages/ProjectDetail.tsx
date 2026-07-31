@@ -264,18 +264,14 @@ export function ProjectDetail() {
           <p className="text-sm text-text-secondary">
             As áreas e produtividades são reaproveitadas; preço e custo são atualizados com a matriz de preços atual.
           </p>
-          <Select value={targetSeason} onChange={(e) => setTargetSeason(e.target.value)}>
-            <option value="" disabled>
-              Selecione a safra de destino
-            </option>
-            {seasons
+          <Select
+            value={targetSeason}
+            onChange={setTargetSeason}
+            placeholder="Selecione a safra de destino"
+            options={seasons
               .filter((s) => s.id !== project.season.id)
-              .map((season) => (
-                <option key={season.id} value={season.id}>
-                  {season.label}
-                </option>
-              ))}
-          </Select>
+              .map((season) => ({ value: season.id, label: season.label }))}
+          />
         </div>
       </Dialog>
     </div>
