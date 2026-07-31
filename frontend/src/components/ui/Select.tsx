@@ -87,7 +87,8 @@ export function Select({
   function choose(next: string) {
     onChange(next);
     close();
-    triggerRef.current?.focus();
+    // preventScroll evita o salto da página ao devolver o foco ao trigger.
+    triggerRef.current?.focus({ preventScroll: true });
   }
 
   useLayoutEffect(() => {
@@ -138,10 +139,20 @@ export function Select({
     return () => document.removeEventListener('mousedown', onPointerDown);
   }, [open, onBlur]);
 
+  // Rola só dentro do listbox — scrollIntoView no portal empurra a página inteira.
   useEffect(() => {
-    if (!open || highlighted < 0) return;
-    const el = listRef.current?.querySelector<HTMLElement>(`[data-index="${highlighted}"]`);
-    el?.scrollIntoView({ block: 'nearest' });
+    if (!open || highlighted < 0 || !listRef.current) return;
+    const list = listRef.current;
+    const el = list.querySelector<HTMLElement>(`[data-index="${highlighted}"]`);
+    if (!el) return;
+
+    const top = el.offsetTop;
+    const bottom = top + el.offsetHeight;
+    if (top < list.scrollTop) {
+      list.scrollTop = top;
+    } else if (bottom > list.scrollTop + list.clientHeight) {
+      list.scrollTop = bottom - list.clientHeight;
+    }
   }, [open, highlighted]);
 
   function moveHighlight(offset: number) {
@@ -249,9 +260,14 @@ export function Select({
                   key={option.value === '' ? `__empty-${optionText(option)}` : option.value}
                   type="button"
                   role="option"
+                  tabIndex={-1}
                   data-index={index}
                   aria-selected={isSelected}
                   disabled={option.disabled}
+                  onMouseDown={(event) => {
+                    // Impede o foco na opção (que também scrolla a página).
+                    event.preventDefault();
+                  }}
                   onMouseEnter={() => {
                     if (!option.disabled) setHighlighted(index);
                   }}
