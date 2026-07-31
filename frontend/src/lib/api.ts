@@ -47,9 +47,10 @@ async function parseErrorBody(res: Response): Promise<ErrorBody> {
   }
 }
 
-function buildHeaders(init?: HeadersInit, json = true): Headers {
+function buildHeaders(init?: HeadersInit, jsonBody = false): Headers {
   const headers = new Headers(init);
-  if (json && !headers.has('Content-Type')) {
+  // Fastify rejeita Content-Type: application/json sem body (ex.: POST de ação).
+  if (jsonBody && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json');
   }
   const token = getAccessToken();
@@ -57,6 +58,12 @@ function buildHeaders(init?: HeadersInit, json = true): Headers {
     headers.set('Authorization', `Bearer ${token}`);
   }
   return headers;
+}
+
+function hasRequestBody(body: BodyInit | null | undefined): boolean {
+  if (body == null) return false;
+  if (typeof body === 'string') return body.length > 0;
+  return true;
 }
 
 async function refreshSession(): Promise<boolean> {
@@ -113,9 +120,10 @@ async function ensureFreshAccessToken(skipRefresh: boolean): Promise<void> {
   await refreshSession();
 }
 
-async function request(path: string, options: RequestInit = {}, jsonContentType = true): Promise<Response> {
+async function request(path: string, options: RequestInit = {}, asJson = true): Promise<Response> {
   const { headers: optionHeaders, ...rest } = options;
-  const headers = buildHeaders(optionHeaders, jsonContentType);
+  const jsonBody = asJson && hasRequestBody(rest.body);
+  const headers = buildHeaders(optionHeaders, jsonBody);
   const skipRefresh = headers.get('X-Skip-Auth-Refresh') === '1';
   headers.delete('X-Skip-Auth-Refresh');
 
@@ -133,7 +141,7 @@ async function request(path: string, options: RequestInit = {}, jsonContentType 
   if (res.status === 401 && !skipRefresh && getRefreshToken()) {
     const refreshed = await refreshSession();
     if (refreshed) {
-      const retryHeaders = buildHeaders(optionHeaders, jsonContentType);
+      const retryHeaders = buildHeaders(optionHeaders, jsonBody);
       retryHeaders.delete('X-Skip-Auth-Refresh');
       const retryToken = getAccessToken();
       if (retryToken) retryHeaders.set('Authorization', `Bearer ${retryToken}`);
