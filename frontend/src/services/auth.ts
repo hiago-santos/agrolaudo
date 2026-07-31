@@ -1,4 +1,5 @@
-import { api } from '@/lib/api';
+import { api, refreshSession } from '@/lib/api';
+import { getRememberMe, getRefreshToken, setRefreshToken } from '@/lib/authToken';
 import type { User } from '@/types/domain';
 
 export interface AuthSession {
@@ -18,13 +19,18 @@ export const authService = {
       headers: { 'X-Skip-Auth-Refresh': '1' },
     }),
 
-  refresh: (refreshToken: string) =>
-    api<AuthSession>('/auth/refresh', {
-      method: 'POST',
-      body: JSON.stringify({ refreshToken }),
-      // Evita loop: o refresh não tenta se auto-renovar em 401.
-      headers: { 'X-Skip-Auth-Refresh': '1' },
-    }),
+  /** Usa o single-flight do api.ts (evita POSTs paralelos em /auth/refresh). */
+  refresh: async (refreshToken: string): Promise<AuthSession> => {
+    if (refreshToken !== getRefreshToken()) {
+      setRefreshToken(refreshToken, getRememberMe());
+    }
+
+    const session = await refreshSession();
+    if (!session) {
+      throw new Error('Sessão expirada. Faça login novamente.');
+    }
+    return session as AuthSession;
+  },
 
   logout: (refreshToken?: string | null) =>
     api<{ ok: true }>('/auth/logout', {

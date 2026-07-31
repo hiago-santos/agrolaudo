@@ -95,11 +95,15 @@ export async function rotateRefreshToken(
     throw new UnauthorizedError('Usuário inativo.');
   }
 
-  // Rotação: revoga o atual e emite um novo (reuso de token roubado invalida a cadeia).
-  await prisma.refreshToken.update({
-    where: { id: existing.id },
+  // Rotação atômica: só um request concorrente consegue revogar o token.
+  const revoked = await prisma.refreshToken.updateMany({
+    where: { id: existing.id, revokedAt: null },
     data: { revokedAt: new Date() },
   });
+
+  if (revoked.count === 0) {
+    throw new UnauthorizedError('Sessão expirada. Faça login novamente.');
+  }
 
   const next = await createRefreshToken(prisma, existing.userId, existing.remember);
   return { user: existing.user, refreshToken: next.raw, remember: existing.remember };

@@ -1,8 +1,9 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
-import { ApiError, setAuthRefreshListener } from '@/lib/api';
+import { ApiError, refreshSession, setAuthRefreshListener } from '@/lib/api';
 import {
+  accessTokenNeedsRefresh,
   clearAuthTokens,
   getAccessToken,
   getRefreshToken,
@@ -17,7 +18,7 @@ interface AuthState {
   user: User | null;
   loading: boolean;
   hydrated: boolean;
-  /** Espelho reativo da sessão (tokens ficam fora do Zustand). */
+  /** Espelho reativo da sessão (tokens ficam em authToken). */
   authenticated: boolean;
   error: string | null;
   rememberMe: boolean;
@@ -28,7 +29,7 @@ interface AuthState {
   hydrateFromSession: () => Promise<void>;
 }
 
-/** Invalida hydrates/refreshes em voo quando login/logout cria uma sessão nova. */
+/** Incrementado só em login/logout para cancelar hydrates obsoletos. */
 let sessionEpoch = 0;
 let hydratePromise: Promise<void> | null = null;
 
@@ -42,9 +43,8 @@ function applySession(session: {
   setRefreshToken(session.refreshToken, session.rememberMe);
 }
 
-function syncAuthenticated(): boolean {
-  const user = useAuthStore.getState().user;
-  return !!user && (!!getAccessToken() || !!getRefreshToken());
+function hasLiveSession(): boolean {
+  return !!getAccessToken() || !!getRefreshToken();
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -64,11 +64,11 @@ export const useAuthStore = create<AuthState>()(
       },
 
       login: async (email, password, rememberMe) => {
-        const epoch = ++sessionEpoch;
         set({ loading: true, error: null });
         try {
           const session = await authService.login(email, password, rememberMe);
-          if (epoch !== sessionEpoch) return false;
+          // Invalida hydrates em voo só depois do sucesso — nunca descarta o login.
+          sessionEpoch += 1;
           applySession(session);
           set({
             user: session.user,
@@ -80,7 +80,6 @@ export const useAuthStore = create<AuthState>()(
           });
           return true;
         } catch (e: unknown) {
-          if (epoch !== sessionEpoch) return false;
           const message = e instanceof ApiError ? e.message : 'Falha ao entrar. Tente novamente.';
           clearAuthTokens();
           set({
@@ -109,12 +108,28 @@ export const useAuthStore = create<AuthState>()(
         if (hydratePromise) return hydratePromise;
 
         hydratePromise = (async () => {
-          const epoch = ++sessionEpoch;
+          const epoch = sessionEpoch;
           set({ loading: true });
-          const refreshToken = getRefreshToken();
 
+          // Já logado com access válido — só marca hydrated.
+          if (get().user && getAccessToken() && !accessTokenNeedsRefresh()) {
+            if (epoch !== sessionEpoch) return;
+            set({ loading: false, hydrated: true, authenticated: true });
+            return;
+          }
+
+          const refreshToken = getRefreshToken();
           if (!refreshToken) {
             if (epoch !== sessionEpoch) return;
+            // Não apaga tokens que um login acabou de gravar.
+            if (hasLiveSession()) {
+              set({
+                loading: false,
+                hydrated: true,
+                authenticated: !!get().user && hasLiveSession(),
+              });
+              return;
+            }
             clearAuthTokens();
             set({
               user: null,
@@ -127,11 +142,28 @@ export const useAuthStore = create<AuthState>()(
           }
 
           try {
-            const session = await authService.refresh(refreshToken);
+            const session = await refreshSession();
             if (epoch !== sessionEpoch) return;
-            applySession(session);
-            const user = session.user ?? (await authService.me());
+
+            if (!session) {
+              if (hasLiveSession() && get().user) {
+                set({ loading: false, hydrated: true, authenticated: true });
+                return;
+              }
+              set({
+                user: null,
+                loading: false,
+                hydrated: true,
+                rememberMe: false,
+                authenticated: false,
+              });
+              return;
+            }
+
+            const user =
+              (session.user as User | undefined) ?? get().user ?? (await authService.me());
             if (epoch !== sessionEpoch) return;
+
             set({
               user,
               rememberMe: session.rememberMe,
@@ -140,15 +172,9 @@ export const useAuthStore = create<AuthState>()(
               authenticated: true,
             });
           } catch {
-            // Só limpa se esta tentativa ainda for a sessão atual
-            // (evita apagar um login que acabou de vencer o hydrate).
             if (epoch !== sessionEpoch) return;
-            if (getRefreshToken() !== refreshToken) {
-              set({
-                loading: false,
-                hydrated: true,
-                authenticated: syncAuthenticated(),
-              });
+            if (hasLiveSession() && get().user) {
+              set({ loading: false, hydrated: true, authenticated: true });
               return;
             }
             clearAuthTokens();
@@ -170,29 +196,27 @@ export const useAuthStore = create<AuthState>()(
     {
       name: 'agrolaudo-auth',
       storage: createJSONStorage(() => localStorage),
-      // Perfil só persiste com "lembrar-me"; tokens ficam em authToken.
       partialize: (state) => ({
         user: state.rememberMe ? state.user : null,
         rememberMe: state.rememberMe,
       }),
       onRehydrateStorage: () => (state) => {
         if (!state) return;
-        // Após rehydrate do persist, ainda precisamos do refresh HTTP.
-        // authenticated fica false até hydrateFromSession concluir.
         state.authenticated = false;
       },
     },
   ),
 );
 
-// Mantém o store alinhado quando o api.ts renova a sessão em background.
 setAuthRefreshListener((session) => {
   if (!session) {
     useAuthStore.setState({ user: null, rememberMe: false, authenticated: false });
     return;
   }
+  const user = (session.user as User | undefined) ?? useAuthStore.getState().user;
   useAuthStore.setState({
     rememberMe: session.rememberMe,
-    authenticated: syncAuthenticated() || !!getAccessToken() || !!getRefreshToken(),
+    user: user ?? useAuthStore.getState().user,
+    authenticated: !!user && hasLiveSession(),
   });
 });

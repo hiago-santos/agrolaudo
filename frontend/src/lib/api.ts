@@ -29,9 +29,17 @@ interface ErrorBody {
   issues?: unknown;
 }
 
-type RefreshListener = (session: { accessToken: string; refreshToken: string; expiresIn: number; rememberMe: boolean } | null) => void;
+export type RefreshedSession = {
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
+  rememberMe: boolean;
+  user?: unknown;
+};
 
-let refreshPromise: Promise<boolean> | null = null;
+type RefreshListener = (session: RefreshedSession | null) => void;
+
+let refreshPromise: Promise<RefreshedSession | null> | null = null;
 let onSessionRefreshed: RefreshListener | null = null;
 
 /** O store de auth registra um listener para sincronizar user/tokens após o refresh. */
@@ -66,7 +74,11 @@ function hasRequestBody(body: BodyInit | null | undefined): boolean {
   return true;
 }
 
-async function refreshSession(): Promise<boolean> {
+/**
+ * Renova access+refresh com single-flight (um POST por vez).
+ * Usado pelo api client e pelo hydrate do store — evita rotação concorrente.
+ */
+export async function refreshSession(): Promise<RefreshedSession | null> {
   if (refreshPromise) return refreshPromise;
 
   refreshPromise = (async () => {
@@ -74,46 +86,49 @@ async function refreshSession(): Promise<boolean> {
     if (!currentRefresh) {
       clearAuthTokens();
       onSessionRefreshed?.(null);
-      return false;
+      return null;
     }
-
-    /** Só limpa sessão se o refresh que falhou ainda for o atual (não um login novo). */
-    const clearIfStillCurrent = () => {
-      if (getRefreshToken() !== currentRefresh) return false;
-      clearAuthTokens();
-      onSessionRefreshed?.(null);
-      return false;
-    };
 
     try {
       const res = await fetch(`${API_URL}/auth/refresh`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Skip-Auth-Refresh': '1' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ refreshToken: currentRefresh }),
       });
 
       if (!res.ok) {
-        return clearIfStillCurrent();
+        // Só limpa se o refresh que falhou ainda for o atual (login novo não é apagado).
+        if (getRefreshToken() === currentRefresh) {
+          clearAuthTokens();
+          onSessionRefreshed?.(null);
+        }
+        return null;
       }
 
       // Login paralelo pode ter substituído o refresh enquanto este request voava.
       if (getRefreshToken() !== currentRefresh) {
-        return true;
+        const access = getAccessToken();
+        if (!access) return null;
+        return {
+          accessToken: access,
+          refreshToken: getRefreshToken()!,
+          expiresIn: 60 * 60,
+          rememberMe: false,
+        };
       }
 
-      const data = (await res.json()) as {
-        accessToken: string;
-        refreshToken: string;
-        expiresIn: number;
-        rememberMe: boolean;
-      };
+      const data = (await res.json()) as RefreshedSession;
 
       setAccessToken(data.accessToken, data.expiresIn);
       setRefreshToken(data.refreshToken, data.rememberMe);
       onSessionRefreshed?.(data);
-      return true;
+      return data;
     } catch {
-      return clearIfStillCurrent();
+      if (getRefreshToken() === currentRefresh) {
+        clearAuthTokens();
+        onSessionRefreshed?.(null);
+      }
+      return null;
     } finally {
       refreshPromise = null;
     }
@@ -141,6 +156,7 @@ async function request(path: string, options: RequestInit = {}, asJson = true): 
   // Reaplica o Bearer após um possível refresh.
   const token = getAccessToken();
   if (token) headers.set('Authorization', `Bearer ${token}`);
+  else headers.delete('Authorization');
 
   let res = await fetch(`${API_URL}${path}`, {
     ...rest,
@@ -154,6 +170,7 @@ async function request(path: string, options: RequestInit = {}, asJson = true): 
       retryHeaders.delete('X-Skip-Auth-Refresh');
       const retryToken = getAccessToken();
       if (retryToken) retryHeaders.set('Authorization', `Bearer ${retryToken}`);
+      else retryHeaders.delete('Authorization');
       res = await fetch(`${API_URL}${path}`, {
         ...rest,
         headers: retryHeaders,
