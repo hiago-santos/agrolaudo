@@ -12,7 +12,8 @@ export interface PropertyInput {
   ruralEnvironmentalRegistry?: string;
   latitude?: number;
   longitude?: number;
-  boundary?: GeoPolygon;
+  /** `null` apaga a demarcação salva; omitir mantém a atual. */
+  boundary?: GeoPolygon | null;
 }
 
 export const propertiesService = {

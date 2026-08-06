@@ -1,4 +1,4 @@
-import type { Prisma, PrismaClient } from '@prisma/client';
+import { Prisma, type PrismaClient } from '@prisma/client';
 
 import { ConflictError, NotFoundError } from '../lib/errors.js';
 import { polygonAreaHectares, polygonCentroid, type GeoJsonPolygon } from '../lib/geo.js';
@@ -12,17 +12,34 @@ import type { z } from 'zod';
 type CreatePropertyInput = z.infer<typeof createPropertyBodySchema>;
 type UpdatePropertyInput = z.infer<typeof updatePropertyBodySchema>;
 
-/** Quando um polígono é desenhado, o centro e a área passam a vir dele — não são mais editáveis à mão. */
-function withBoundaryDerivedFields<T extends { boundary?: GeoJsonPolygon }>(
-  data: T,
-): T & { latitude?: number; longitude?: number; boundaryAreaHectares?: number } {
-  if (!data.boundary) return data;
-  const { latitude, longitude } = polygonCentroid(data.boundary);
+interface BoundaryFields {
+  boundary?: Prisma.InputJsonValue | typeof Prisma.DbNull;
+  boundaryAreaHectares?: number | null;
+  latitude?: number | null;
+  longitude?: number | null;
+}
+
+/**
+ * Centro e área medida derivam do polígono — nunca são editados à mão. As três
+ * situações são distintas de propósito: `undefined` mantém a demarcação que já
+ * existe, `null` a apaga junto com os campos derivados, e um polígono recalcula tudo.
+ */
+function boundaryFields(boundary: GeoJsonPolygon | null | undefined): BoundaryFields {
+  if (boundary === undefined) return {};
+  if (boundary === null) {
+    return {
+      boundary: Prisma.DbNull,
+      boundaryAreaHectares: null,
+      latitude: null,
+      longitude: null,
+    };
+  }
+  const { latitude, longitude } = polygonCentroid(boundary);
   return {
-    ...data,
+    boundary,
+    boundaryAreaHectares: polygonAreaHectares(boundary),
     latitude,
     longitude,
-    boundaryAreaHectares: polygonAreaHectares(data.boundary),
   };
 }
 
@@ -82,7 +99,8 @@ export async function createProperty(prisma: PrismaClient, data: CreatePropertyI
 
   await ensureUniqueRegistration(prisma, data.producerId, data.registrationNumber);
 
-  return prisma.property.create({ data: withBoundaryDerivedFields(data) });
+  const { boundary, ...rest } = data;
+  return prisma.property.create({ data: { ...rest, ...boundaryFields(boundary) } });
 }
 
 export async function updateProperty(prisma: PrismaClient, id: string, data: UpdatePropertyInput) {
@@ -92,7 +110,8 @@ export async function updateProperty(prisma: PrismaClient, id: string, data: Upd
     await ensureUniqueRegistration(prisma, property.producerId, data.registrationNumber, id);
   }
 
-  return prisma.property.update({ where: { id }, data: withBoundaryDerivedFields(data) });
+  const { boundary, ...rest } = data;
+  return prisma.property.update({ where: { id }, data: { ...rest, ...boundaryFields(boundary) } });
 }
 
 export async function deleteProperty(prisma: PrismaClient, id: string) {

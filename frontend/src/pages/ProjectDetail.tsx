@@ -238,9 +238,10 @@ export function ProjectDetail() {
           </div>
           <PolygonMapField
             polygon={project.financedAreaBoundary}
-            onPolygonChange={() => {}}
+            referencePolygon={project.property.boundary ?? null}
+            referenceLabel="Contorno da propriedade"
             editable={false}
-            height={240}
+            height="clamp(260px, 40vh, 440px)"
           />
         </Card>
       )}

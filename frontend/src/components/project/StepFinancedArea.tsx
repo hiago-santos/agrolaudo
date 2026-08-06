@@ -1,5 +1,5 @@
 import { Landmark } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { PolygonMapField } from '@/components/map/PolygonMapField';
@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Label, Textarea } from '@/components/ui/Input';
 import { ApiError } from '@/lib/api';
+import { formatNumber } from '@/lib/format';
+import { polygonAreaHectares } from '@/lib/geo';
 import { projectsService } from '@/services/projects';
 import { toast } from '@/stores/toast';
 import type { ProjectDraft } from '@/types/projectDraft';
@@ -70,6 +72,16 @@ export function StepFinancedArea({ draft, onChange, onBack }: StepFinancedAreaPr
       ? { lat: Number(property.latitude), lng: Number(property.longitude) }
       : null;
 
+  const financedHectares = useMemo(
+    () => (draft.financedAreaBoundary ? polygonAreaHectares(draft.financedAreaBoundary) : null),
+    [draft.financedAreaBoundary],
+  );
+  const totalHectares = property ? Number(property.totalAreaHectares) : 0;
+  const financedShare =
+    financedHectares !== null && totalHectares > 0
+      ? (financedHectares / totalHectares) * 100
+      : null;
+
   return (
     <div className="space-y-6">
       <Card className="space-y-3 p-5">
@@ -87,8 +99,16 @@ export function StepFinancedArea({ draft, onChange, onBack }: StepFinancedAreaPr
           center={center}
           referencePolygon={property?.boundary ?? null}
           referenceLabel="Contorno da propriedade"
-          height={360}
+          height="clamp(320px, 58vh, 620px)"
         />
+
+        {financedHectares !== null && (
+          <p className="rounded-md border border-accent/30 bg-accent-soft px-3 py-2 text-xs text-text">
+            Financiando <span className="font-semibold">{formatNumber(financedHectares)} ha</span>{' '}
+            de {formatNumber(totalHectares)} ha da propriedade
+            {financedShare !== null && ` — ${formatNumber(financedShare)}% da área total`}.
+          </p>
+        )}
       </Card>
 
       <Card className="p-5">

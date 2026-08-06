@@ -1,4 +1,4 @@
-import { ArrowLeft, MapPin, Pencil, Plus, Sprout } from 'lucide-react';
+import { ArrowLeft, Crosshair, MapPin, Pencil, Plus, Sprout } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
@@ -10,7 +10,7 @@ import { Button, buttonVariants } from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { SkeletonCards, SkeletonPageHeader, SkeletonText } from '@/components/ui/Skeleton';
-import { formatNumber } from '@/lib/format';
+import { formatCoordinates, formatNumber } from '@/lib/format';
 import { producersService } from '@/services/producers';
 import { useAuthStore } from '@/stores/auth';
 import { toast } from '@/stores/toast';
@@ -159,7 +159,20 @@ export function ProducerDetail() {
                 </div>
                 <p className="mt-2 text-xs text-text-secondary">
                   Área total: {formatNumber(property.totalAreaHectares)} ha
+                  {property.boundaryAreaHectares &&
+                    ` · demarcada: ${formatNumber(property.boundaryAreaHectares)} ha`}
                 </p>
+                {property.latitude && property.longitude ? (
+                  <p className="mt-1 flex items-center gap-1 font-mono text-[11px] text-text-tertiary">
+                    <Crosshair className="h-3 w-3 shrink-0" />
+                    {formatCoordinates(property.latitude, property.longitude)}
+                  </p>
+                ) : (
+                  <p className="mt-1 flex items-center gap-1 text-[11px] text-text-tertiary">
+                    <MapPin className="h-3 w-3 shrink-0" />
+                    Sem demarcação no mapa
+                  </p>
+                )}
                 <Link
                   to={`/projects/new?producerId=${producer.id}&propertyId=${property.id}`}
                   className={buttonVariants('outline', 'sm') + ' mt-3 w-full'}

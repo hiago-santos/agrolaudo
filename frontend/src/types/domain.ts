@@ -149,6 +149,8 @@ export interface ProjectSummary {
 }
 
 export interface Project extends ProjectSummary {
+  /** O detalhe traz a propriedade inteira (PROJECT_DETAIL_INCLUDE), não só o resumo. */
+  property: Property;
   issuingCity: string;
   issueDate: string;
   notes: string | null;

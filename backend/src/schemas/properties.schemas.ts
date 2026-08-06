@@ -14,8 +14,9 @@ export const createPropertyBodySchema = z.object({
   latitude: z.coerce.number().optional(),
   longitude: z.coerce.number().optional(),
   /// Polígono desenhado no mapa — quando presente, `latitude`/`longitude` e
-  /// `boundaryAreaHectares` são recalculados a partir dele (ver properties.service.ts).
-  boundary: geoJsonPolygonSchema.optional(),
+  /// `boundaryAreaHectares` são recalculados a partir dele. `null` apaga a
+  /// demarcação; omitir mantém a atual (ver properties.service.ts).
+  boundary: geoJsonPolygonSchema.nullish(),
 });
 
 export const updatePropertyBodySchema = createPropertyBodySchema.partial().omit({

@@ -107,9 +107,8 @@ export function CompleteProject() {
             </p>
             <PolygonMapField
               polygon={project.financedAreaBoundary}
-              onPolygonChange={() => {}}
               editable={false}
-              height={220}
+              height="clamp(240px, 34vh, 380px)"
             />
           </div>
         )}

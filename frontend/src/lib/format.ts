@@ -15,6 +15,25 @@ export function formatPercentage(value: string | number | null | undefined): str
   return `${formatNumber(value, 2)}%`;
 }
 
+/** Par lat/lng em graus decimais — 6 casas ≈ 0,1 m, precisão de sobra pra uma fazenda. */
+export function formatCoordinates(
+  latitude: string | number | null | undefined,
+  longitude: string | number | null | undefined,
+): string {
+  if (
+    latitude === null ||
+    latitude === undefined ||
+    longitude === null ||
+    longitude === undefined
+  ) {
+    return '—';
+  }
+  const lat = Number(latitude);
+  const lng = Number(longitude);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return '—';
+  return `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+}
+
 export function formatDate(value: string | Date | null | undefined): string {
   if (!value) return '—';
   const date = typeof value === 'string' ? new Date(value) : value;

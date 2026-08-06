@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { FieldError, Input, Label } from '@/components/ui/Input';
 import { ApiError } from '@/lib/api';
+import { formatNumber } from '@/lib/format';
+import { polygonAreaHectares } from '@/lib/geo';
 import { propertiesService } from '@/services/properties';
 import { toast } from '@/stores/toast';
 import type { GeoPolygon, Property } from '@/types/domain';
@@ -44,9 +46,15 @@ export function PropertyFormDialog({
     register,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({ resolver: zodResolver(schema) });
   const [boundary, setBoundary] = useState<GeoPolygon | null>(null);
+
+  const drawnAreaHectares = useMemo(
+    () => (boundary ? polygonAreaHectares(boundary) : null),
+    [boundary],
+  );
 
   useEffect(() => {
     if (open) {
@@ -81,7 +89,8 @@ export function PropertyFormDialog({
         ...data,
         stateRegistration: data.stateRegistration || undefined,
         ruralEnvironmentalRegistry: data.ruralEnvironmentalRegistry || undefined,
-        boundary: boundary ?? undefined,
+        // `null` explícito apaga a demarcação anterior no servidor; `undefined` a manteria.
+        boundary,
       };
       const saved = property
         ? await propertiesService.update(property.id, payload)
@@ -99,7 +108,7 @@ export function PropertyFormDialog({
       open={open}
       onClose={onClose}
       title={property ? 'Editar propriedade' : 'Nova propriedade'}
-      size="md"
+      size="2xl"
       footer={
         <>
           <Button type="button" variant="outline" onClick={onClose}>
@@ -111,59 +120,85 @@ export function PropertyFormDialog({
         </>
       }
     >
-      <form id={FORM_ID} onSubmit={(e) => void handleSubmit(onSubmit)(e)} className="space-y-4">
-        <div>
-          <Label htmlFor="name">Nome da fazenda</Label>
-          <Input id="name" {...register('name')} />
-          <FieldError>{errors.name?.message}</FieldError>
+      <form
+        id={FORM_ID}
+        onSubmit={(e) => void handleSubmit(onSubmit)(e)}
+        className="grid gap-6 lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)]"
+      >
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="name">Nome da fazenda</Label>
+            <Input id="name" {...register('name')} />
+            <FieldError>{errors.name?.message}</FieldError>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-1">
+            <div>
+              <Label htmlFor="registrationNumber">Matrícula</Label>
+              <Input id="registrationNumber" {...register('registrationNumber')} />
+              <FieldError>{errors.registrationNumber?.message}</FieldError>
+            </div>
+            <div>
+              <Label htmlFor="totalAreaHectares">Área total (ha)</Label>
+              <Input
+                id="totalAreaHectares"
+                type="number"
+                step="0.01"
+                min="0"
+                {...register('totalAreaHectares')}
+              />
+              <FieldError>{errors.totalAreaHectares?.message}</FieldError>
+              {drawnAreaHectares !== null && (
+                <p className="mt-1 text-[11px] text-text-tertiary">
+                  Mapa: {formatNumber(drawnAreaHectares)} ha ·{' '}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setValue('totalAreaHectares', Number(drawnAreaHectares.toFixed(2)), {
+                        shouldValidate: true,
+                      })
+                    }
+                    className="rounded-sm font-medium text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring"
+                  >
+                    usar
+                  </button>
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_80px]">
+            <div>
+              <Label htmlFor="city">Município</Label>
+              <Input id="city" {...register('city')} />
+              <FieldError>{errors.city?.message}</FieldError>
+            </div>
+            <div>
+              <Label htmlFor="state">UF</Label>
+              <Input id="state" maxLength={2} className="uppercase" {...register('state')} />
+              <FieldError>{errors.state?.message}</FieldError>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-1">
+            <div>
+              <Label htmlFor="stateRegistration">Inscrição Estadual</Label>
+              <Input id="stateRegistration" {...register('stateRegistration')} />
+            </div>
+            <div>
+              <Label htmlFor="ruralEnvironmentalRegistry">CAR</Label>
+              <Input id="ruralEnvironmentalRegistry" {...register('ruralEnvironmentalRegistry')} />
+            </div>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <div>
-            <Label htmlFor="registrationNumber">Matrícula</Label>
-            <Input id="registrationNumber" {...register('registrationNumber')} />
-            <FieldError>{errors.registrationNumber?.message}</FieldError>
-          </div>
-          <div>
-            <Label htmlFor="totalAreaHectares">Área total (ha)</Label>
-            <Input
-              id="totalAreaHectares"
-              type="number"
-              step="0.01"
-              min="0"
-              {...register('totalAreaHectares')}
-            />
-            <FieldError>{errors.totalAreaHectares?.message}</FieldError>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_80px]">
-          <div>
-            <Label htmlFor="city">Município</Label>
-            <Input id="city" {...register('city')} />
-            <FieldError>{errors.city?.message}</FieldError>
-          </div>
-          <div>
-            <Label htmlFor="state">UF</Label>
-            <Input id="state" maxLength={2} className="uppercase" {...register('state')} />
-            <FieldError>{errors.state?.message}</FieldError>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <div>
-            <Label htmlFor="stateRegistration">Inscrição Estadual</Label>
-            <Input id="stateRegistration" {...register('stateRegistration')} />
-          </div>
-          <div>
-            <Label htmlFor="ruralEnvironmentalRegistry">CAR</Label>
-            <Input id="ruralEnvironmentalRegistry" {...register('ruralEnvironmentalRegistry')} />
-          </div>
-        </div>
-
-        <div>
-          <Label>Localização</Label>
-          <PolygonMapField polygon={boundary} onPolygonChange={setBoundary} height={280} />
+        <div className="min-w-0">
+          <Label>Demarcação da área</Label>
+          <PolygonMapField
+            polygon={boundary}
+            onPolygonChange={setBoundary}
+            height="clamp(280px, 48vh, 540px)"
+          />
         </div>
       </form>
     </Dialog>
