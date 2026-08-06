@@ -1,4 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Landmark, Sprout, UserCog } from 'lucide-react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { z } from 'zod';
@@ -9,6 +11,7 @@ import { Checkbox } from '@/components/ui/Checkbox';
 import { FieldError, Input, Label } from '@/components/ui/Input';
 import { Seal } from '@/components/ui/Seal';
 import { useAuthStore } from '@/stores/auth';
+import type { UserRole } from '@/types/domain';
 
 const loginSchema = z.object({
   email: z.string().email('Informe um e-mail válido.'),
@@ -16,6 +19,43 @@ const loginSchema = z.object({
   rememberMe: z.boolean(),
 });
 type LoginForm = z.infer<typeof loginSchema>;
+
+/**
+ * Credenciais do seed (`backend/prisma/seed.ts`) — só pra pular o formulário durante
+ * a fase de prévia/demonstração. TIRAR daqui antes de qualquer deploy que não seja
+ * só pra mostrar o sistema pra alguém.
+ */
+interface QuickLoginEntry {
+  role: UserRole;
+  label: string;
+  email: string;
+  password: string;
+  icon: typeof UserCog;
+}
+
+const QUICK_LOGIN: QuickLoginEntry[] = [
+  {
+    role: 'ADMIN',
+    label: 'Administrador',
+    email: 'admin@admin.local',
+    password: 'admin123',
+    icon: UserCog,
+  },
+  {
+    role: 'AGRONOMIST',
+    label: 'Engenheiro Agrônomo',
+    email: 'pedro.agronomist@agrolaudo.local',
+    password: 'agronomist123',
+    icon: Sprout,
+  },
+  {
+    role: 'BANK',
+    label: 'Banco',
+    email: 'bank@agrolaudo.local',
+    password: 'bank123',
+    icon: Landmark,
+  },
+];
 
 export function Login() {
   const login = useAuthStore((s) => s.login);
@@ -27,6 +67,7 @@ export function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const destination = (location.state as { from?: string } | null)?.from ?? '/';
+  const [quickLoginRole, setQuickLoginRole] = useState<UserRole | null>(null);
 
   const {
     register,
@@ -45,6 +86,16 @@ export function Login() {
   async function onSubmit(data: LoginForm) {
     const ok = await login(data.email, data.password, data.rememberMe);
     if (ok) navigate(destination, { replace: true });
+  }
+
+  async function quickLogin(entry: (typeof QUICK_LOGIN)[number]) {
+    setQuickLoginRole(entry.role);
+    try {
+      const ok = await login(entry.email, entry.password, false);
+      if (ok) navigate(destination, { replace: true });
+    } finally {
+      setQuickLoginRole(null);
+    }
   }
 
   return (
@@ -75,6 +126,29 @@ export function Login() {
           <p className="mt-2 max-w-xs text-sm text-text-secondary">
             Laudos de Capacidade Pagadora para produtores rurais
           </p>
+        </div>
+
+        <div className="mb-4 space-y-2 rounded-lg border border-gold/40 bg-gold-soft p-4">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-gold">
+            Prévia — entrar sem senha
+          </p>
+          <div className="grid grid-cols-3 gap-2">
+            {QUICK_LOGIN.map((entry) => (
+              <Button
+                key={entry.role}
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-auto flex-col gap-1 py-2.5 text-[11px]"
+                loading={quickLoginRole === entry.role}
+                disabled={loading}
+                onClick={() => void quickLogin(entry)}
+              >
+                <entry.icon className="h-4 w-4" />
+                {entry.label}
+              </Button>
+            ))}
+          </div>
         </div>
 
         <form
