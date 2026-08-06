@@ -8,11 +8,19 @@ import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { FieldError, Input, Label } from '@/components/ui/Input';
 import { ApiError } from '@/lib/api';
-import { formatNumber } from '@/lib/format';
-import { polygonAreaHectares } from '@/lib/geo';
+import { formatCoordinates, formatNumber } from '@/lib/format';
+import { polygonAreaHectares, polygonCentroid, type LatLng } from '@/lib/geo';
 import { propertiesService } from '@/services/properties';
 import { toast } from '@/stores/toast';
 import type { GeoPolygon, Property } from '@/types/domain';
+
+function parseLatLng(latitude: string, longitude: string): LatLng | null {
+  if (!latitude.trim() || !longitude.trim()) return null;
+  const lat = Number(latitude);
+  const lng = Number(longitude);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  return { lat, lng };
+}
 
 const schema = z.object({
   name: z.string().min(1, 'Informe o nome da propriedade.'),
@@ -50,10 +58,20 @@ export function PropertyFormDialog({
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({ resolver: zodResolver(schema) });
   const [boundary, setBoundary] = useState<GeoPolygon | null>(null);
+  // Ficam fora do react-hook-form pra evitar o coerce de número tratar campo vazio como
+  // 0 — string crua é mais simples de zerar/reidratar aqui.
+  const [latitude, setLatitude] = useState('');
+  const [longitude, setLongitude] = useState('');
 
   const drawnAreaHectares = useMemo(
     () => (boundary ? polygonAreaHectares(boundary) : null),
     [boundary],
+  );
+  const drawnCentroid = useMemo(() => (boundary ? polygonCentroid(boundary) : null), [boundary]);
+  // O que efetivamente vai ser salvo — o override manual, ou o centro do desenho por padrão.
+  const effectivePoint = useMemo(
+    () => parseLatLng(latitude, longitude) ?? drawnCentroid,
+    [latitude, longitude, drawnCentroid],
   );
 
   useEffect(() => {
@@ -80,17 +98,41 @@ export function PropertyFormDialog({
             },
       );
       setBoundary(property?.boundary ?? null);
+      setLatitude(property?.latitude ?? '');
+      setLongitude(property?.longitude ?? '');
     }
   }, [open, property, reset]);
 
+  function handleBoundaryChange(next: GeoPolygon | null) {
+    setBoundary(next);
+    // Primeiro desenho de uma propriedade nova sem coordenada ainda: já sugere o centro
+    // como ponto de partida. Depois disso quem decide é o botão "usar" ou o próprio usuário.
+    if (next && !latitude.trim() && !longitude.trim()) {
+      const centroid = polygonCentroid(next);
+      if (centroid) {
+        setLatitude(centroid.lat.toFixed(6));
+        setLongitude(centroid.lng.toFixed(6));
+      }
+    }
+  }
+
+  function useDrawnCentroid() {
+    if (!drawnCentroid) return;
+    setLatitude(drawnCentroid.lat.toFixed(6));
+    setLongitude(drawnCentroid.lng.toFixed(6));
+  }
+
   async function onSubmit(data: FormValues) {
     try {
+      const point = parseLatLng(latitude, longitude);
       const payload = {
         ...data,
         stateRegistration: data.stateRegistration || undefined,
         ruralEnvironmentalRegistry: data.ruralEnvironmentalRegistry || undefined,
         // `null` explícito apaga a demarcação anterior no servidor; `undefined` a manteria.
         boundary,
+        latitude: point?.lat,
+        longitude: point?.lng,
       };
       const saved = property
         ? await propertiesService.update(property.id, payload)
@@ -190,13 +232,52 @@ export function PropertyFormDialog({
               <Input id="ruralEnvironmentalRegistry" {...register('ruralEnvironmentalRegistry')} />
             </div>
           </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label htmlFor="latitude">Latitude</Label>
+              <Input
+                id="latitude"
+                type="number"
+                step="0.000001"
+                value={latitude}
+                onChange={(e) => setLatitude(e.target.value)}
+                placeholder="-20.540000"
+              />
+            </div>
+            <div>
+              <Label htmlFor="longitude">Longitude</Label>
+              <Input
+                id="longitude"
+                type="number"
+                step="0.000001"
+                value={longitude}
+                onChange={(e) => setLongitude(e.target.value)}
+                placeholder="-47.385000"
+              />
+            </div>
+          </div>
+          {drawnCentroid && (
+            <p className="-mt-2 text-[11px] text-text-tertiary">
+              Centro do desenho: {formatCoordinates(drawnCentroid.lat, drawnCentroid.lng)} ·{' '}
+              <button
+                type="button"
+                onClick={useDrawnCentroid}
+                className="rounded-sm font-medium text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring"
+              >
+                usar
+              </button>
+            </p>
+          )}
         </div>
 
         <div className="min-w-0">
           <Label>Demarcação da área</Label>
           <PolygonMapField
             polygon={boundary}
-            onPolygonChange={setBoundary}
+            onPolygonChange={handleBoundaryChange}
+            center={effectivePoint}
+            markerPosition={effectivePoint}
             height="clamp(280px, 48vh, 540px)"
           />
         </div>

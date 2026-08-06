@@ -12,35 +12,47 @@ import type { z } from 'zod';
 type CreatePropertyInput = z.infer<typeof createPropertyBodySchema>;
 type UpdatePropertyInput = z.infer<typeof updatePropertyBodySchema>;
 
-interface BoundaryFields {
+interface LocationFields {
   boundary?: Prisma.InputJsonValue | typeof Prisma.DbNull;
   boundaryAreaHectares?: number | null;
-  latitude?: number | null;
-  longitude?: number | null;
+  latitude?: number;
+  longitude?: number;
 }
 
 /**
- * Centro e área medida derivam do polígono — nunca são editados à mão. As três
- * situações são distintas de propósito: `undefined` mantém a demarcação que já
- * existe, `null` a apaga junto com os campos derivados, e um polígono recalcula tudo.
+ * O centro do polígono é só o PADRÃO da referência de localização — o usuário pode
+ * ajustar lat/lng à mão na tela (ex.: sede da fazenda não fica no centro geométrico
+ * do perímetro). Por isso latitude/longitude explícitos sempre vencem; só caem pro
+ * centróide quando o formulário não manda um valor próprio.
+ *
+ * `boundary`: `undefined` mantém a demarcação atual, `null` apaga (junto com a área
+ * derivada), um polígono novo recalcula a área — mas NUNCA mexe em lat/lng sozinho.
  */
-function boundaryFields(boundary: GeoJsonPolygon | null | undefined): BoundaryFields {
-  if (boundary === undefined) return {};
+function locationFields(
+  boundary: GeoJsonPolygon | null | undefined,
+  latitude: number | undefined,
+  longitude: number | undefined,
+): LocationFields {
+  const fields: LocationFields = {};
+
   if (boundary === null) {
-    return {
-      boundary: Prisma.DbNull,
-      boundaryAreaHectares: null,
-      latitude: null,
-      longitude: null,
-    };
+    fields.boundary = Prisma.DbNull;
+    fields.boundaryAreaHectares = null;
+  } else if (boundary !== undefined) {
+    fields.boundary = boundary;
+    fields.boundaryAreaHectares = polygonAreaHectares(boundary);
   }
-  const { latitude, longitude } = polygonCentroid(boundary);
-  return {
-    boundary,
-    boundaryAreaHectares: polygonAreaHectares(boundary),
-    latitude,
-    longitude,
-  };
+
+  if (latitude !== undefined && longitude !== undefined) {
+    fields.latitude = latitude;
+    fields.longitude = longitude;
+  } else if (boundary) {
+    const centroid = polygonCentroid(boundary);
+    fields.latitude = centroid.latitude;
+    fields.longitude = centroid.longitude;
+  }
+
+  return fields;
 }
 
 export async function listProperties(
@@ -99,8 +111,10 @@ export async function createProperty(prisma: PrismaClient, data: CreatePropertyI
 
   await ensureUniqueRegistration(prisma, data.producerId, data.registrationNumber);
 
-  const { boundary, ...rest } = data;
-  return prisma.property.create({ data: { ...rest, ...boundaryFields(boundary) } });
+  const { boundary, latitude, longitude, ...rest } = data;
+  return prisma.property.create({
+    data: { ...rest, ...locationFields(boundary, latitude, longitude) },
+  });
 }
 
 export async function updateProperty(prisma: PrismaClient, id: string, data: UpdatePropertyInput) {
@@ -110,8 +124,11 @@ export async function updateProperty(prisma: PrismaClient, id: string, data: Upd
     await ensureUniqueRegistration(prisma, property.producerId, data.registrationNumber, id);
   }
 
-  const { boundary, ...rest } = data;
-  return prisma.property.update({ where: { id }, data: { ...rest, ...boundaryFields(boundary) } });
+  const { boundary, latitude, longitude, ...rest } = data;
+  return prisma.property.update({
+    where: { id },
+    data: { ...rest, ...locationFields(boundary, latitude, longitude) },
+  });
 }
 
 export async function deleteProperty(prisma: PrismaClient, id: string) {

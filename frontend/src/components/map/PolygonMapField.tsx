@@ -44,6 +44,13 @@ export interface PolygonMapFieldProps {
   /** Contorno auxiliar somente-leitura (ex.: a propriedade inteira, ao desenhar a área financiada). */
   referencePolygon?: GeoPolygon | null;
   referenceLabel?: string;
+  /**
+   * Sobrepõe o marcador do centro. Omitido: mostra o centróide geométrico calculado
+   * ao vivo (comportamento padrão). Passado (mesmo `null`): o chamador assume o
+   * controle — uso típico é uma referência de localização editável à parte do
+   * desenho (ver PropertyFormDialog, onde lat/lng podem divergir do centro do polígono).
+   */
+  markerPosition?: LatLng | null;
   className?: string;
 }
 
@@ -85,6 +92,7 @@ function MapField({
   height,
   referencePolygon,
   referenceLabel,
+  markerPosition,
   className,
 }: PolygonMapFieldProps) {
   const apiLoaded = useApiIsLoaded();
@@ -107,6 +115,7 @@ function MapField({
   const currentPolygon = useMemo(() => pathToPolygon(path), [path]);
   const areaHectares = currentPolygon ? polygonAreaHectares(currentPolygon) : null;
   const centroidPoint = currentPolygon ? polygonCentroid(currentPolygon) : null;
+  const displayedPoint = markerPosition === undefined ? centroidPoint : markerPosition;
 
   useEffect(() => {
     if (polygon === emitted.current) return;
@@ -326,11 +335,11 @@ function MapField({
             <Polyline path={path} strokeColor={DRAWN_COLOR} strokeWeight={2} />
           )}
 
-          {apiLoaded && centroidPoint && (
+          {apiLoaded && displayedPoint && (
             <Marker
-              position={centroidPoint}
+              position={displayedPoint}
               clickable={false}
-              title="Centro da área — referência de localização"
+              title="Referência de localização"
               zIndex={5}
               icon={{
                 path: google.maps.SymbolPath.CIRCLE,
@@ -362,10 +371,10 @@ function MapField({
             </p>
           )}
 
-          {centroidPoint && (
+          {displayedPoint && (
             <p className="flex items-center gap-1 font-mono text-[11px] text-text-tertiary">
               <Crosshair className="h-3 w-3 shrink-0" />
-              {formatCoordinates(centroidPoint.lat, centroidPoint.lng)}
+              {formatCoordinates(displayedPoint.lat, displayedPoint.lng)}
             </p>
           )}
 
