@@ -137,7 +137,7 @@ export function Login() {
           ) : (
             <>
               <p className="text-[11px] font-semibold uppercase tracking-widest text-gold">
-                Prévia — entrar sem senha
+                Acesso direto
               </p>
               <div className="grid grid-cols-2 gap-2">
                 {QUICK_LOGIN.map((entry) => (
