@@ -1,5 +1,4 @@
-import { Sprout } from 'lucide-react';
-
+import { GrowthMark } from '@/components/ui/GrowthMark';
 import { cn } from '@/lib/cn';
 
 interface SealProps {
@@ -27,7 +26,7 @@ export function Seal({ size = 'md', className }: SealProps) {
       aria-hidden
     >
       <div className="absolute inset-[3px] rounded-full border border-accent/40" />
-      <Sprout className={sizes.icon} />
+      <GrowthMark className={sizes.icon} />
     </div>
   );
 }
