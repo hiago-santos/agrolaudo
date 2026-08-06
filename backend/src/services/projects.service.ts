@@ -7,6 +7,7 @@ import {
   type ProjectDetail,
 } from '../lib/prismaIncludes.js';
 import { ConflictError, NotFoundError, ValidationError } from '../lib/errors.js';
+import { polygonAreaHectares, type GeoJsonPolygon } from '../lib/geo.js';
 
 import { calculateProjectItems, type ProjectItemInput } from './calculation.service.js';
 import { nextProjectNumber } from './numbering.service.js';
@@ -32,6 +33,16 @@ export interface UpdateProjectInput {
   issuingCity?: string;
   notes?: string;
   items?: ProjectItemInput[];
+  financedAreaBoundary?: GeoJsonPolygon;
+}
+
+export interface InitiateProjectInput {
+  producerId: string;
+  propertyId: string;
+  seasonId: string;
+  agronomistId: string;
+  financedAreaBoundary: GeoJsonPolygon;
+  notes?: string;
 }
 
 export interface ListProjectsFilters {
@@ -97,7 +108,10 @@ export async function listProjects(prisma: PrismaClient, filters: ListProjectsFi
 }
 
 export async function getProject(prisma: PrismaClient, id: string): Promise<ProjectDetail> {
-  const project = await prisma.project.findUnique({ where: { id }, include: PROJECT_DETAIL_INCLUDE });
+  const project = await prisma.project.findUnique({
+    where: { id },
+    include: PROJECT_DETAIL_INCLUDE,
+  });
   if (!project) throw new NotFoundError('Projeto');
   return project;
 }
@@ -169,18 +183,70 @@ export async function createProject(prisma: PrismaClient, input: CreateProjectIn
   }, TRANSACTION_OPTIONS);
 }
 
+/**
+ * Cria a "casca" de um projeto — usado pelo papel BANK (ver review.service.ts pro
+ * outro lado do fluxo do banco). Sem atividades: totais ficam zerados e o status
+ * nasce em BANK_INITIATED até um agrônomo completar via updateProject.
+ */
+export async function initiateProject(
+  prisma: PrismaClient,
+  initiatedById: string,
+  input: InitiateProjectInput,
+) {
+  const { property, season, agronomist } = await validateReferences(prisma, input);
+  const financedAreaHectares = polygonAreaHectares(input.financedAreaBoundary);
+
+  return prisma.$transaction(async (tx) => {
+    const year = new Date().getFullYear();
+    const number = await nextProjectNumber(tx, year);
+
+    return tx.project.create({
+      data: {
+        number,
+        producer: { connect: { id: property.producerId } },
+        property: { connect: { id: property.id } },
+        season: { connect: { id: season.id } },
+        agronomist: { connect: { id: agronomist.id } },
+        initiatedBy: { connect: { id: initiatedById } },
+        status: 'BANK_INITIATED',
+        issuingCity: agronomist.issuingCity,
+        notes: input.notes,
+        financedAreaBoundary: input.financedAreaBoundary,
+        financedAreaHectares,
+      },
+      include: PROJECT_DETAIL_INCLUDE,
+    });
+  }, TRANSACTION_OPTIONS);
+}
+
+const EDITABLE_STATUSES: ProjectStatus[] = ['DRAFT', 'BANK_INITIATED'];
+
 export async function updateProject(prisma: PrismaClient, id: string, input: UpdateProjectInput) {
   const project = await getProject(prisma, id);
-  if (project.status !== 'DRAFT') {
+  if (!EDITABLE_STATUSES.includes(project.status)) {
     throw new ConflictError(
       'Só é possível editar projetos em rascunho. Para corrigir um projeto já assinado, duplique-o.',
     );
   }
 
+  const financedAreaBoundary = input.financedAreaBoundary;
+  const financedAreaHectares = financedAreaBoundary
+    ? polygonAreaHectares(financedAreaBoundary)
+    : undefined;
+
+  // Casca aberta pelo banco ganhando as atividades do agrônomo — vira rascunho de verdade.
+  const nextStatus: ProjectStatus =
+    project.status === 'BANK_INITIATED' && input.items ? 'DRAFT' : project.status;
+
   if (!input.items) {
     return prisma.project.update({
       where: { id },
-      data: { issuingCity: input.issuingCity, notes: input.notes },
+      data: {
+        issuingCity: input.issuingCity,
+        notes: input.notes,
+        financedAreaBoundary,
+        financedAreaHectares,
+      },
       include: PROJECT_DETAIL_INCLUDE,
     });
   }
@@ -193,8 +259,11 @@ export async function updateProject(prisma: PrismaClient, id: string, input: Upd
     return tx.project.update({
       where: { id },
       data: {
+        status: nextStatus,
         issuingCity: input.issuingCity,
         notes: input.notes,
+        financedAreaBoundary,
+        financedAreaHectares,
         totalRevenue: consolidated.totalRevenue,
         totalCost: consolidated.totalCost,
         totalProfit: consolidated.totalProfit,
@@ -207,6 +276,7 @@ export async function updateProject(prisma: PrismaClient, id: string, input: Upd
 }
 
 const NON_TERMINAL_STATUSES: ProjectStatus[] = [
+  'BANK_INITIATED',
   'DRAFT',
   'PENDING_SIGNATURES',
   'SIGNED',
@@ -216,7 +286,9 @@ const NON_TERMINAL_STATUSES: ProjectStatus[] = [
 export async function cancelProject(prisma: PrismaClient, id: string) {
   const project = await getProject(prisma, id);
   if (!NON_TERMINAL_STATUSES.includes(project.status)) {
-    throw new ConflictError('Este projeto já está em um estado final e não pode mais ser cancelado.');
+    throw new ConflictError(
+      'Este projeto já está em um estado final e não pode mais ser cancelado.',
+    );
   }
   return prisma.project.update({
     where: { id },
@@ -232,7 +304,9 @@ export async function cancelProject(prisma: PrismaClient, id: string) {
 export async function submitProjectForReview(prisma: PrismaClient, id: string) {
   const project = await getProject(prisma, id);
   if (project.status !== 'SIGNED') {
-    throw new ConflictError('Só é possível enviar pro banco um projeto já assinado pelas duas partes.');
+    throw new ConflictError(
+      'Só é possível enviar pro banco um projeto já assinado pelas duas partes.',
+    );
   }
   return prisma.project.update({
     where: { id },
@@ -264,7 +338,9 @@ export async function duplicateProject(prisma: PrismaClient, id: string, newSeas
         areaHectares: Number(item.areaHectares),
         productivity: Number(item.productivity),
         unitPrice: currentQuote ? Number(currentQuote.unitPrice) : Number(item.unitPrice),
-        costPerHectare: currentQuote ? Number(currentQuote.costPerHectare) : Number(item.costPerHectare),
+        costPerHectare: currentQuote
+          ? Number(currentQuote.costPerHectare)
+          : Number(item.costPerHectare),
         herdHeadCount: item.herdHeadCount ? Number(item.herdHeadCount) : undefined,
       };
     }),

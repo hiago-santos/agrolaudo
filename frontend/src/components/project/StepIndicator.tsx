@@ -48,7 +48,9 @@ export function StepIndicator({ current }: { current: number }) {
               </span>
             </div>
             {!isLast && (
-              <div className={cn('mx-3 h-px min-w-4 flex-1 sm:mx-4', done ? 'bg-accent' : 'bg-border')} />
+              <div
+                className={cn('mx-3 h-px min-w-4 flex-1 sm:mx-4', done ? 'bg-accent' : 'bg-border')}
+              />
             )}
           </li>
         );

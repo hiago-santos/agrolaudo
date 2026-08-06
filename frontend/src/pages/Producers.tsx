@@ -10,7 +10,14 @@ import { Card } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Input } from '@/components/ui/Input';
 import { SkeletonTable } from '@/components/ui/Skeleton';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Table';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/Table';
 import { producersService } from '@/services/producers';
 import { useAuthStore } from '@/stores/auth';
 import { toast } from '@/stores/toast';
@@ -83,7 +90,11 @@ export function Producers() {
             <EmptyState
               icon={Users}
               title="Nenhum produtor encontrado"
-              description={search ? 'Ajuste a busca ou cadastre um novo produtor.' : 'Cadastre o primeiro produtor.'}
+              description={
+                search
+                  ? 'Ajuste a busca ou cadastre um novo produtor.'
+                  : 'Cadastre o primeiro produtor.'
+              }
             />
           </div>
         ) : (
@@ -115,7 +126,9 @@ export function Producers() {
                   <TableCell>
                     <Badge tone="accent">{CLASSIFICATION_LABEL[producer.classification]}</Badge>
                   </TableCell>
-                  <TableCell className="text-right text-text-secondary">{producer.properties.length}</TableCell>
+                  <TableCell className="text-right text-text-secondary">
+                    {producer.properties.length}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>

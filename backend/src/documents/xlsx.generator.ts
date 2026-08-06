@@ -45,7 +45,11 @@ export async function generateProjectXlsx(project: ProjectDocument): Promise<Buf
   const sheet = workbook.addWorksheet('Projeto', {
     pageSetup: { paperSize: 9, orientation: 'portrait', fitToWidth: 1, fitToHeight: 0 },
   });
-  sheet.columns = [{ key: 'a', width: 34 }, { key: 'b', width: 33 }, { key: 'c', width: 23 }];
+  sheet.columns = [
+    { key: 'a', width: 34 },
+    { key: 'b', width: 33 },
+    { key: 'c', width: 23 },
+  ];
 
   let rowNumber = 0;
 
@@ -83,7 +87,10 @@ export async function generateProjectXlsx(project: ProjectDocument): Promise<Buf
     const productionRow = nextRow(totalProductionLabel(unit));
     productionRow.getCell(2).value = { formula: `B${averageRow.number}*B${areaRow.number}` };
 
-    const costPerHectareRow = nextRow('Custo de Produção/há (aproximado)', Number(item.costPerHectare));
+    const costPerHectareRow = nextRow(
+      'Custo de Produção/há (aproximado)',
+      Number(item.costPerHectare),
+    );
 
     const revenueRow = nextRow('Faturamento Bruto');
     revenueRow.getCell(2).value = { formula: `B${productionRow.number}*B${priceRow.number}` };
@@ -102,12 +109,21 @@ export async function generateProjectXlsx(project: ProjectDocument): Promise<Buf
     for (const row of [areaRow, averageRow]) {
       row.getCell(2).numFmt = NUMBER_FORMAT;
     }
-    for (const row of [priceRow, costPerHectareRow, productionRow, revenueRow, totalCostRow, profitRow]) {
+    for (const row of [
+      priceRow,
+      costPerHectareRow,
+      productionRow,
+      revenueRow,
+      totalCostRow,
+      profitRow,
+    ]) {
       row.getCell(2).numFmt = row === productionRow ? NUMBER_FORMAT : CURRENCY_FORMAT;
     }
   }
 
-  const totalRow = nextRow(`Receita Total (${project.items.map((i) => i.activityName).join(' + ')})`);
+  const totalRow = nextRow(
+    `Receita Total (${project.items.map((i) => i.activityName).join(' + ')})`,
+  );
   totalRow.getCell(2).value = {
     formula: `SUM(${profitRowNumbers.map((number) => `B${number}`).join(',')})`,
   };

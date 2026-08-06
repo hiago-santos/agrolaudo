@@ -5,7 +5,10 @@ export function formatCurrency(value: string | number | null | undefined): strin
 
 export function formatNumber(value: string | number | null | undefined, decimals = 2): string {
   const number = Number(value ?? 0);
-  return number.toLocaleString('pt-BR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+  return number.toLocaleString('pt-BR', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  });
 }
 
 export function formatPercentage(value: string | number | null | undefined): string {

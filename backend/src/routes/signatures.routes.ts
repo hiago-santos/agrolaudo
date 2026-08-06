@@ -2,7 +2,10 @@ import type { FastifyPluginOptions } from 'fastify';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 
 import type { Env } from '../env.js';
-import { createSignatureBodySchema, generateSignatureLinkBodySchema } from '../schemas/signatures.schemas.js';
+import {
+  createSignatureBodySchema,
+  generateSignatureLinkBodySchema,
+} from '../schemas/signatures.schemas.js';
 import { projectParamsSchema } from '../schemas/projects.schemas.js';
 import * as signaturesService from '../services/signatures.service.js';
 

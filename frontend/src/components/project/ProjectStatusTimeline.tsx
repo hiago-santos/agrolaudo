@@ -9,7 +9,13 @@ interface TimelineStep {
   icon: typeof Sprout;
 }
 
+/**
+ * BANK_INITIATED só aparece de fato quando o projeto nasceu como "casca" aberta pelo
+ * banco — nesse caso o passo aparece antes de DRAFT. Projetos emitidos direto pelo
+ * agrônomo pulam esse passo (ver `visibleFlow` abaixo).
+ */
 const FLOW: TimelineStep[] = [
+  { status: 'BANK_INITIATED', label: 'Aberto pelo banco', icon: Landmark },
   { status: 'DRAFT', label: 'Emitido pelo agrônomo', icon: Sprout },
   { status: 'PENDING_SIGNATURES', label: 'Aguardando assinaturas', icon: PenLine },
   { status: 'SIGNED', label: 'Assinado', icon: Check },
@@ -18,6 +24,7 @@ const FLOW: TimelineStep[] = [
 ];
 
 const FLOW_ORDER: ProjectStatus[] = [
+  'BANK_INITIATED',
   'DRAFT',
   'PENDING_SIGNATURES',
   'SIGNED',
@@ -25,8 +32,14 @@ const FLOW_ORDER: ProjectStatus[] = [
   'APPROVED',
 ];
 
-/** Visualiza o fluxo Agrônomo → Banco → Produtor. */
-export function ProjectStatusTimeline({ status }: { status: ProjectStatus }) {
+interface ProjectStatusTimelineProps {
+  status: ProjectStatus;
+  /** Projetos emitidos direto pelo agrônomo nunca passam por BANK_INITIATED — esconde o passo. */
+  wasBankInitiated?: boolean;
+}
+
+/** Visualiza o fluxo Banco (opcional) → Agrônomo → Assinaturas → Banco → Produtor. */
+export function ProjectStatusTimeline({ status, wasBankInitiated }: ProjectStatusTimelineProps) {
   if (status === 'CANCELLED') {
     return (
       <div className="flex items-center gap-2 rounded-lg border border-danger/30 bg-danger-soft px-4 py-3 text-sm text-danger">
@@ -36,6 +49,9 @@ export function ProjectStatusTimeline({ status }: { status: ProjectStatus }) {
     );
   }
 
+  const visibleFlow = wasBankInitiated
+    ? FLOW
+    : FLOW.filter((step) => step.status !== 'BANK_INITIATED');
   const rejected = status === 'REJECTED';
   const currentIndex = rejected
     ? FLOW_ORDER.indexOf('UNDER_BANK_REVIEW')
@@ -43,9 +59,10 @@ export function ProjectStatusTimeline({ status }: { status: ProjectStatus }) {
 
   return (
     <ol className="flex w-full items-start">
-      {FLOW.map((step, index) => {
-        const done = index < currentIndex || (index === currentIndex && !rejected);
-        const isLast = index === FLOW.length - 1;
+      {visibleFlow.map((step, index) => {
+        const stepIndex = FLOW_ORDER.indexOf(step.status);
+        const done = stepIndex < currentIndex || (stepIndex === currentIndex && !rejected);
+        const isLast = index === visibleFlow.length - 1;
         const isDecisionStep = step.status === 'APPROVED';
         const Icon = isDecisionStep && rejected ? ThumbsDown : step.icon;
         const label = isDecisionStep
@@ -55,7 +72,7 @@ export function ProjectStatusTimeline({ status }: { status: ProjectStatus }) {
               ? 'Aprovado pelo banco'
               : step.label
           : step.label;
-        const connectorDone = index < currentIndex;
+        const connectorDone = stepIndex < currentIndex;
 
         return (
           <li key={step.status} className="relative flex min-w-0 flex-1 flex-col items-center px-1">

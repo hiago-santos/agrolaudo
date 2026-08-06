@@ -94,7 +94,13 @@ export const UNITS: Record<UnitCode, UnitConfig> = {
   STEREO: { code: 'STEREO', singular: 'Stereo', plural: 'Stereos', symbol: 'st', article: 'o' },
   ARROBA: { code: 'ARROBA', singular: 'Arroba', plural: 'Arrobas', symbol: '@', article: 'a' },
   HEAD: { code: 'HEAD', singular: 'Cabeça', plural: 'Cabeças', symbol: 'cab', article: 'a' },
-  AU: { code: 'AU', singular: 'Unidade Animal', plural: 'Unidades Animal', symbol: 'UA', article: 'a' },
+  AU: {
+    code: 'AU',
+    singular: 'Unidade Animal',
+    plural: 'Unidades Animal',
+    symbol: 'UA',
+    article: 'a',
+  },
 };
 
 /** "Média Sacas/hectare" — rótulo da linha de produtividade no XLSX/PDF. */

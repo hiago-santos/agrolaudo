@@ -13,7 +13,8 @@ function applyTheme(theme: Theme): void {
   document.documentElement.setAttribute('data-theme', theme);
 }
 
-const prefersDark = typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches;
+const prefersDark =
+  typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches;
 
 export const useThemeStore = create<ThemeState>()(
   persist(

@@ -13,7 +13,10 @@ type PriceQuoteItemInput = z.infer<typeof priceQuoteItemInputSchema>;
  * histórico completo nunca é sobrescrito — PriceQuote é append-only.
  */
 export async function getCurrentPriceMatrix(prisma: PrismaClient) {
-  const activities = await prisma.activity.findMany({ where: { active: true }, orderBy: { order: 'asc' } });
+  const activities = await prisma.activity.findMany({
+    where: { active: true },
+    orderBy: { order: 'asc' },
+  });
 
   const quotes = await prisma.priceQuote.findMany({
     where: { activityId: { in: activities.map((a) => a.id) } },
@@ -136,7 +139,12 @@ export async function importPriceMatrixXlsx(
   const activities = await prisma.activity.findMany();
   const activityBySlug = new Map(activities.map((a) => [a.slug, a]));
 
-  const validRows: Array<{ activityId: string; unit: string; unitPrice: number; costPerHectare: number }> = [];
+  const validRows: Array<{
+    activityId: string;
+    unit: string;
+    unitPrice: number;
+    costPerHectare: number;
+  }> = [];
   const skipped: string[] = [];
 
   sheet.eachRow((row, rowNumber) => {

@@ -19,6 +19,7 @@ interface Step1Props {
   draft: ProjectDraft;
   onChange: (patch: Partial<ProjectDraft>) => void;
   onNext: () => void;
+  nextLabel?: string;
 }
 
 /** Busca vazia/inicial sem atraso; digitação com debounce curto. */
@@ -26,7 +27,7 @@ function searchDelay(value: string): number {
   return value.trim() ? 250 : 0;
 }
 
-export function Step1ProducerSelection({ draft, onChange, onNext }: Step1Props) {
+export function Step1ProducerSelection({ draft, onChange, onNext, nextLabel }: Step1Props) {
   const user = useAuthStore((s) => s.user);
   const [search, setSearch] = useState('');
   const [results, setResults] = useState<Producer[]>([]);
@@ -47,7 +48,7 @@ export function Step1ProducerSelection({ draft, onChange, onNext }: Step1Props) 
       const active = list.find((s) => s.active);
       if (active && !draft.season) onChange({ season: active });
     });
-    if (user?.role === 'ADMIN') {
+    if (user?.role === 'ADMIN' || user?.role === 'BANK') {
       void agronomistsService.list().then(setAgronomists);
     } else if (user?.agronomist) {
       onChange({ agronomistId: user.agronomist.id });
@@ -141,7 +142,11 @@ export function Step1ProducerSelection({ draft, onChange, onNext }: Step1Props) 
                 <p className="text-xs text-text-secondary">{draft.producer.taxId}</p>
               </div>
             </div>
-            <Button variant="ghost" size="sm" onClick={() => onChange({ producer: null, property: null })}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onChange({ producer: null, property: null })}
+            >
               Trocar
             </Button>
           </div>
@@ -180,7 +185,9 @@ export function Step1ProducerSelection({ draft, onChange, onNext }: Step1Props) 
                 )}
                 {!searching && results.length === 0 && (
                   <p className="p-3 text-xs text-text-secondary">
-                    {search.trim() ? 'Nenhum produtor encontrado.' : 'Nenhum produtor cadastrado ainda.'}
+                    {search.trim()
+                      ? 'Nenhum produtor encontrado.'
+                      : 'Nenhum produtor cadastrado ainda.'}
                   </p>
                 )}
                 {!searching &&
@@ -201,7 +208,9 @@ export function Step1ProducerSelection({ draft, onChange, onNext }: Step1Props) 
                       )}
                     >
                       <span className="min-w-0 truncate">
-                        <span className="block truncate font-medium text-text">{producer.name}</span>
+                        <span className="block truncate font-medium text-text">
+                          {producer.name}
+                        </span>
                         <span className="block truncate text-xs text-text-tertiary">
                           {producer.city}-{producer.state}
                           {producer.properties.length > 0
@@ -209,12 +218,19 @@ export function Step1ProducerSelection({ draft, onChange, onNext }: Step1Props) 
                             : ''}
                         </span>
                       </span>
-                      <span className="shrink-0 font-mono text-xs text-text-secondary">{producer.taxId}</span>
+                      <span className="shrink-0 font-mono text-xs text-text-secondary">
+                        {producer.taxId}
+                      </span>
                     </button>
                   ))}
               </div>
             )}
-            <Button type="button" variant="outline" size="sm" onClick={() => setNewProducerOpen(true)}>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setNewProducerOpen(true)}
+            >
               <Plus className="h-3.5 w-3.5" />
               Criar novo produtor
             </Button>
@@ -250,7 +266,12 @@ export function Step1ProducerSelection({ draft, onChange, onNext }: Step1Props) 
                 {draft.property?.id === property.id && <Check className="h-4 w-4 text-accent" />}
               </button>
             ))}
-            <Button type="button" variant="outline" size="sm" onClick={() => setNewPropertyOpen(true)}>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setNewPropertyOpen(true)}
+            >
               <Plus className="h-3.5 w-3.5" />
               Nova propriedade
             </Button>
@@ -273,7 +294,7 @@ export function Step1ProducerSelection({ draft, onChange, onNext }: Step1Props) 
           />
         </div>
 
-        {user?.role === 'ADMIN' && (
+        {(user?.role === 'ADMIN' || user?.role === 'BANK') && (
           <div>
             <Label htmlFor="agronomist">Engenheiro Agrônomo responsável</Label>
             <Select
@@ -293,7 +314,7 @@ export function Step1ProducerSelection({ draft, onChange, onNext }: Step1Props) 
 
       <div className="flex justify-end">
         <Button onClick={onNext} disabled={!canAdvance}>
-          Próximo: Atividades
+          {nextLabel ?? 'Próximo: Atividades'}
         </Button>
       </div>
 

@@ -40,9 +40,14 @@ const propertiesRoutes: FastifyPluginAsyncZod = async (app) => {
     '/:id',
     {
       preHandler: [app.requireRole('ADMIN', 'AGRONOMIST')],
-      schema: { params: propertyParamsSchema, body: updatePropertyBodySchema, tags: ['properties'] },
+      schema: {
+        params: propertyParamsSchema,
+        body: updatePropertyBodySchema,
+        tags: ['properties'],
+      },
     },
-    async (request) => propertiesService.updateProperty(app.prisma, request.params.id, request.body),
+    async (request) =>
+      propertiesService.updateProperty(app.prisma, request.params.id, request.body),
   );
 
   app.delete(

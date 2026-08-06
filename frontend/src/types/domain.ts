@@ -1,11 +1,15 @@
 export type UserRole = 'ADMIN' | 'AGRONOMIST' | 'BANK';
+
+/** Polígono GeoJSON simples — um anel externo, coordenadas em [lng, lat]. */
+export interface GeoPolygon {
+  type: 'Polygon';
+  coordinates: number[][][];
+}
 export type ProducerClassification = 'PRONAF' | 'PRONAMP' | 'OTHER';
 export type ActivityCategory =
-  | 'GRAINS_FIBERS'
-  | 'PERMANENT_FRUIT'
-  | 'SEMI_PERMANENT'
-  | 'LIVESTOCK_PASTURE';
+  'GRAINS_FIBERS' | 'PERMANENT_FRUIT' | 'SEMI_PERMANENT' | 'LIVESTOCK_PASTURE';
 export type ProjectStatus =
+  | 'BANK_INITIATED'
   | 'DRAFT'
   | 'PENDING_SIGNATURES'
   | 'SIGNED'
@@ -59,6 +63,8 @@ export interface Property {
   ruralEnvironmentalRegistry: string | null;
   latitude: string | null;
   longitude: string | null;
+  boundary: GeoPolygon | null;
+  boundaryAreaHectares: string | null;
   producer?: { id: string; name: string; taxId: string };
 }
 
@@ -151,6 +157,9 @@ export interface Project extends ProjectSummary {
   bankNotes: string | null;
   bankReviewedAt: string | null;
   bankReviewer: { id: string; name: string; email: string } | null;
+  financedAreaBoundary: GeoPolygon | null;
+  financedAreaHectares: string | null;
+  initiatedBy: { id: string; name: string; email: string } | null;
   items: ProjectItem[];
   signatures: Signature[];
 }

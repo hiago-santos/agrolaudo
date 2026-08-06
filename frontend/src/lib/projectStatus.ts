@@ -2,6 +2,7 @@ import type { BadgeTone } from '@/components/ui/Badge';
 import type { ProjectStatus } from '@/types/domain';
 
 export const PROJECT_STATUS_TONE: Record<ProjectStatus, BadgeTone> = {
+  BANK_INITIATED: 'warning',
   DRAFT: 'neutral',
   PENDING_SIGNATURES: 'warning',
   SIGNED: 'accent',
@@ -12,6 +13,7 @@ export const PROJECT_STATUS_TONE: Record<ProjectStatus, BadgeTone> = {
 };
 
 export const PROJECT_STATUS_LABEL: Record<ProjectStatus, string> = {
+  BANK_INITIATED: 'Aguardando agrônomo',
   DRAFT: 'Rascunho',
   PENDING_SIGNATURES: 'Aguardando assinatura',
   SIGNED: 'Assinado',

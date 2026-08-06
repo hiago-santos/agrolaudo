@@ -54,7 +54,9 @@ export function buildApp(env: Env) {
   app.register(helmet, { contentSecurityPolicy: false });
 
   // Aceita uma origem ou lista separada por vírgula (ex.: domínio custom + *.up.railway.app).
-  const corsOrigins = env.CORS_ORIGIN.split(',').map((o) => o.trim()).filter(Boolean);
+  const corsOrigins = env.CORS_ORIGIN.split(',')
+    .map((o) => o.trim())
+    .filter(Boolean);
   app.register(cors, {
     origin: corsOrigins.length === 1 ? corsOrigins[0] : corsOrigins,
     allowedHeaders: ['Authorization', 'Content-Type', 'X-Skip-Auth-Refresh'],

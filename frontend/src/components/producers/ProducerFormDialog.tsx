@@ -59,7 +59,15 @@ export function ProducerFormDialog({ open, onClose, producer, onSaved }: Produce
               state: producer.state,
               classification: producer.classification,
             }
-          : { name: '', taxId: '', phone: '', email: '', city: '', state: '', classification: 'OTHER' },
+          : {
+              name: '',
+              taxId: '',
+              phone: '',
+              email: '',
+              city: '',
+              state: '',
+              classification: 'OTHER',
+            },
       );
     }
   }, [open, producer, reset]);

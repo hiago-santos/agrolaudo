@@ -40,6 +40,10 @@ model Property {
   ruralEnvironmentalRegistry String?  @map("rural_environmental_registry")
   latitude                   Decimal? @db.Decimal(9, 6)
   longitude                  Decimal? @db.Decimal(9, 6)
+  /// Polígono GeoJSON (`{ type: 'Polygon', coordinates }`) desenhado no mapa.
+  boundary                   Json?    @map("boundary_geojson")
+  /// Área calculada a partir de `boundary` — informativa, não substitui `totalAreaHectares` (matrícula).
+  boundaryAreaHectares       Decimal? @map("boundary_area_hectares") @db.Decimal(14, 2)
 
   projects Project[]
 

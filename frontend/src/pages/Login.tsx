@@ -69,7 +69,9 @@ export function Login() {
       <div className="relative w-full max-w-sm animate-page-enter">
         <div className="mb-8 flex flex-col items-center text-center">
           <Seal size="lg" />
-          <h1 className="mt-5 font-display text-2xl font-semibold tracking-tight text-text">AgroLaudo</h1>
+          <h1 className="mt-5 font-display text-2xl font-semibold tracking-tight text-text">
+            AgroLaudo
+          </h1>
           <p className="mt-2 max-w-xs text-sm text-text-secondary">
             Laudos de Capacidade Pagadora para produtores rurais
           </p>
@@ -99,7 +101,12 @@ export function Login() {
 
           <div>
             <Label htmlFor="password">Senha</Label>
-            <Input id="password" type="password" autoComplete="current-password" {...register('password')} />
+            <Input
+              id="password"
+              type="password"
+              autoComplete="current-password"
+              {...register('password')}
+            />
             <FieldError>{errors.password?.message}</FieldError>
           </div>
 

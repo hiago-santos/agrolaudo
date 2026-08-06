@@ -21,7 +21,8 @@ export const producersService = {
     return api<Paginated<Producer>>(`/producers?${query.toString()}`);
   },
   get: (id: string) => api<Producer>(`/producers/${id}`),
-  create: (data: ProducerInput) => api<Producer>('/producers', { method: 'POST', body: JSON.stringify(data) }),
+  create: (data: ProducerInput) =>
+    api<Producer>('/producers', { method: 'POST', body: JSON.stringify(data) }),
   update: (id: string, data: Partial<ProducerInput>) =>
     api<Producer>(`/producers/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
   remove: (id: string) => api<void>(`/producers/${id}`, { method: 'DELETE' }),

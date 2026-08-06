@@ -28,7 +28,10 @@ const SIZE_CLASSES: Record<ButtonSize, string> = {
   icon: 'h-9 w-9 p-0',
 };
 
-export function buttonVariants(variant: ButtonVariant = 'primary', size: ButtonSize = 'md'): string {
+export function buttonVariants(
+  variant: ButtonVariant = 'primary',
+  size: ButtonSize = 'md',
+): string {
   return cn(
     'inline-flex items-center justify-center rounded-md font-medium',
     'transition-colors duration-150',
@@ -39,7 +42,10 @@ export function buttonVariants(variant: ButtonVariant = 'primary', size: ButtonS
 }
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant = 'primary', size = 'md', loading = false, disabled, children, ...props }, ref) => {
+  (
+    { className, variant = 'primary', size = 'md', loading = false, disabled, children, ...props },
+    ref,
+  ) => {
     return (
       <button
         ref={ref}

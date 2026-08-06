@@ -38,7 +38,10 @@ export function BankReviewPanel({ project, canReview, onUpdated }: BankReviewPan
         </div>
         {approved && project.approvedCreditLimit && (
           <p className="text-sm text-text-secondary">
-            Limite aprovado: <span className="font-medium text-text">{formatCurrency(project.approvedCreditLimit)}</span>
+            Limite aprovado:{' '}
+            <span className="font-medium text-text">
+              {formatCurrency(project.approvedCreditLimit)}
+            </span>
           </p>
         )}
         {project.bankNotes && <p className="text-sm text-text-secondary">{project.bankNotes}</p>}

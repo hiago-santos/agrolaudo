@@ -36,7 +36,13 @@ export interface ProjectDocument {
   issueDate: string;
   notes: string | null;
   producer: { name: string; taxId: string; city: string; state: string };
-  property: { name: string; registrationNumber: string; city: string; state: string; totalAreaHectares: string };
+  property: {
+    name: string;
+    registrationNumber: string;
+    city: string;
+    state: string;
+    totalAreaHectares: string;
+  };
   season: { label: string };
   agronomist: { name: string; licenseNumber: string; issuingCity: string };
   items: ProjectDocumentItem[];

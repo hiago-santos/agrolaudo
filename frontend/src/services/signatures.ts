@@ -9,8 +9,11 @@ export const signaturesService = {
     }),
 
   generateLink: (projectId: string, type: SignatureType) =>
-    api<{ link: string; token: string; signature: Signature }>(`/projects/${projectId}/signatures/link`, {
-      method: 'POST',
-      body: JSON.stringify({ type }),
-    }),
+    api<{ link: string; token: string; signature: Signature }>(
+      `/projects/${projectId}/signatures/link`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ type }),
+      },
+    ),
 };

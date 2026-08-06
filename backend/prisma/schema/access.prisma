@@ -7,17 +7,19 @@ enum UserRole {
 }
 
 model User {
-  id           String   @id @default(uuid(7)) @db.Uuid
-  name         String
-  email        String   @unique
-  passwordHash String   @map("password_hash")
-  role         UserRole @default(AGRONOMIST)
-  active       Boolean  @default(true)
-  agronomist   Agronomist?
+  id            String         @id @default(uuid(7)) @db.Uuid
+  name          String
+  email         String         @unique
+  passwordHash  String         @map("password_hash")
+  role          UserRole       @default(AGRONOMIST)
+  active        Boolean        @default(true)
+  agronomist    Agronomist?
   refreshTokens RefreshToken[]
 
   /// Projetos que este usuário (papel BANK) decidiu (aprovou/reprovou).
-  reviewedProjects Project[] @relation("BankReviewer")
+  reviewedProjects  Project[] @relation("BankReviewer")
+  /// Projetos que este usuário (papel BANK) abriu como "casca" (ver Project.initiatedBy).
+  initiatedProjects Project[] @relation("ProjectInitiator")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")

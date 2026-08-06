@@ -65,20 +65,20 @@ const authRoutes: FastifyPluginAsyncZod = async (app) => {
     },
   );
 
-  app.post(
-    '/logout',
-    { schema: { body: logoutBodySchema, tags: ['auth'] } },
+  app.post('/logout', { schema: { body: logoutBodySchema, tags: ['auth'] } }, async (request) => {
+    await revokeRefreshToken(app.prisma, request.body?.refreshToken);
+    return { ok: true };
+  });
+
+  app.get(
+    '/me',
+    { preHandler: [app.authenticate], schema: { tags: ['auth'] } },
     async (request) => {
-      await revokeRefreshToken(app.prisma, request.body?.refreshToken);
-      return { ok: true };
+      const user = await getLoggedInUser(app.prisma, request.user.sub);
+      if (!user) throw new NotFoundError('Usuário');
+      return publicUser(user);
     },
   );
-
-  app.get('/me', { preHandler: [app.authenticate], schema: { tags: ['auth'] } }, async (request) => {
-    const user = await getLoggedInUser(app.prisma, request.user.sub);
-    if (!user) throw new NotFoundError('Usuário');
-    return publicUser(user);
-  });
 };
 
 export default authRoutes;

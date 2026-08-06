@@ -109,7 +109,10 @@ export async function rotateRefreshToken(
   return { user: existing.user, refreshToken: next.raw, remember: existing.remember };
 }
 
-export async function revokeRefreshToken(prisma: PrismaClient, rawToken: string | undefined): Promise<void> {
+export async function revokeRefreshToken(
+  prisma: PrismaClient,
+  rawToken: string | undefined,
+): Promise<void> {
   if (!rawToken) return;
   const tokenHash = hashRefreshToken(rawToken);
   await prisma.refreshToken.updateMany({

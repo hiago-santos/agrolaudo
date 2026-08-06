@@ -1,15 +1,16 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
+import { PolygonMapField } from '@/components/map/PolygonMapField';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { FieldError, Input, Label } from '@/components/ui/Input';
 import { ApiError } from '@/lib/api';
 import { propertiesService } from '@/services/properties';
 import { toast } from '@/stores/toast';
-import type { Property } from '@/types/domain';
+import type { GeoPolygon, Property } from '@/types/domain';
 
 const schema = z.object({
   name: z.string().min(1, 'Informe o nome da propriedade.'),
@@ -45,6 +46,7 @@ export function PropertyFormDialog({
     reset,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({ resolver: zodResolver(schema) });
+  const [boundary, setBoundary] = useState<GeoPolygon | null>(null);
 
   useEffect(() => {
     if (open) {
@@ -69,6 +71,7 @@ export function PropertyFormDialog({
               ruralEnvironmentalRegistry: '',
             },
       );
+      setBoundary(property?.boundary ?? null);
     }
   }, [open, property, reset]);
 
@@ -78,6 +81,7 @@ export function PropertyFormDialog({
         ...data,
         stateRegistration: data.stateRegistration || undefined,
         ruralEnvironmentalRegistry: data.ruralEnvironmentalRegistry || undefined,
+        boundary: boundary ?? undefined,
       };
       const saved = property
         ? await propertiesService.update(property.id, payload)
@@ -122,7 +126,13 @@ export function PropertyFormDialog({
           </div>
           <div>
             <Label htmlFor="totalAreaHectares">Área total (ha)</Label>
-            <Input id="totalAreaHectares" type="number" step="0.01" min="0" {...register('totalAreaHectares')} />
+            <Input
+              id="totalAreaHectares"
+              type="number"
+              step="0.01"
+              min="0"
+              {...register('totalAreaHectares')}
+            />
             <FieldError>{errors.totalAreaHectares?.message}</FieldError>
           </div>
         </div>
@@ -149,6 +159,11 @@ export function PropertyFormDialog({
             <Label htmlFor="ruralEnvironmentalRegistry">CAR</Label>
             <Input id="ruralEnvironmentalRegistry" {...register('ruralEnvironmentalRegistry')} />
           </div>
+        </div>
+
+        <div>
+          <Label>Localização</Label>
+          <PolygonMapField polygon={boundary} onPolygonChange={setBoundary} height={280} />
         </div>
       </form>
     </Dialog>

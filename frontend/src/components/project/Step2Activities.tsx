@@ -120,7 +120,9 @@ export function Step2Activities({ draft, onChange, onNext, onBack }: Step2Props)
   function toggleSelection(activityId: string) {
     const current = draft.items[activityId];
     if (!current) return;
-    onChange({ items: { ...draft.items, [activityId]: { ...current, selected: !current.selected } } });
+    onChange({
+      items: { ...draft.items, [activityId]: { ...current, selected: !current.selected } },
+    });
   }
 
   function updateItem(activityId: string, patch: Partial<ItemDraft>) {
@@ -137,17 +139,7 @@ export function Step2Activities({ draft, onChange, onNext, onBack }: Step2Props)
       <Card className="p-5">
         <SkeletonText lines={2} />
         <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-          {[
-            'a1',
-            'a2',
-            'a3',
-            'a4',
-            'a5',
-            'a6',
-            'a7',
-            'a8',
-            'a9',
-          ].map((key) => (
+          {['a1', 'a2', 'a3', 'a4', 'a5', 'a6', 'a7', 'a8', 'a9'].map((key) => (
             <Skeleton key={key} className="h-10 w-full" />
           ))}
         </div>
@@ -186,7 +178,9 @@ export function Step2Activities({ draft, onChange, onNext, onBack }: Step2Props)
 
       {selected.length > 0 && (
         <div className="space-y-4">
-          <p className="text-sm font-semibold text-text">Detalhamento das atividades selecionadas</p>
+          <p className="text-sm font-semibold text-text">
+            Detalhamento das atividades selecionadas
+          </p>
           {selected.map((item) => {
             const calculated = resultByActivity.get(item.activity.id);
             return (
@@ -252,7 +246,10 @@ export function Step2Activities({ draft, onChange, onNext, onBack }: Step2Props)
               label="Faturamento"
               value={result ? formatCurrency(result.consolidated.totalRevenue) : '—'}
             />
-            <Summary label="Custo" value={result ? formatCurrency(result.consolidated.totalCost) : '—'} />
+            <Summary
+              label="Custo"
+              value={result ? formatCurrency(result.consolidated.totalCost) : '—'}
+            />
             <Summary
               label="Receita Líquida"
               value={result ? formatCurrency(result.consolidated.totalProfit) : '—'}
@@ -303,11 +300,25 @@ function NumberField({
   );
 }
 
-function Summary({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
+function Summary({
+  label,
+  value,
+  highlight,
+}: {
+  label: string;
+  value: string;
+  highlight?: boolean;
+}) {
   return (
     <div>
       <p className="text-[10px] uppercase tracking-wide text-text-tertiary">{label}</p>
-      <p className={highlight ? 'text-sm font-semibold text-accent' : 'text-sm font-medium text-text'}>{value}</p>
+      <p
+        className={
+          highlight ? 'text-sm font-semibold text-accent' : 'text-sm font-medium text-text'
+        }
+      >
+        {value}
+      </p>
     </div>
   );
 }

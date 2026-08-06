@@ -11,7 +11,8 @@ export interface SeasonInput {
 export const seasonsService = {
   list: () => api<Season[]>('/seasons'),
   get: (id: string) => api<Season>(`/seasons/${id}`),
-  create: (data: SeasonInput) => api<Season>('/seasons', { method: 'POST', body: JSON.stringify(data) }),
+  create: (data: SeasonInput) =>
+    api<Season>('/seasons', { method: 'POST', body: JSON.stringify(data) }),
   update: (id: string, data: Partial<SeasonInput>) =>
     api<Season>(`/seasons/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
 };

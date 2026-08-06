@@ -77,7 +77,12 @@ describe('Indicadores técnicos de pecuária', () => {
   });
 
   it('não calcula os indicadores de pecuária quando o rebanho não é informado', () => {
-    const item = calculateItem({ areaHectares: 900, productivity: 100, unitPrice: 152, costPerHectare: 9000 });
+    const item = calculateItem({
+      areaHectares: 900,
+      productivity: 100,
+      unitPrice: 152,
+      costPerHectare: 9000,
+    });
     expect(item.productivityPerHectare).toBeNull();
     expect(item.stockingRate).toBeNull();
   });
@@ -85,7 +90,12 @@ describe('Indicadores técnicos de pecuária', () => {
 
 describe('Casos de borda', () => {
   it('área zero zera produção, faturamento e custo sem lançar erro', () => {
-    const item = calculateItem({ areaHectares: 0, productivity: 100, unitPrice: 152, costPerHectare: 9000 });
+    const item = calculateItem({
+      areaHectares: 0,
+      productivity: 100,
+      unitPrice: 152,
+      costPerHectare: 9000,
+    });
     expect(item.totalProduction).toBe('0.00');
     expect(item.grossRevenue).toBe('0.00');
     expect(item.totalCost).toBe('0.00');
@@ -105,14 +115,24 @@ describe('Casos de borda', () => {
   });
 
   it('margem consolidada é zero (não NaN/Infinity) quando o faturamento total é zero', () => {
-    const item = calculateItem({ areaHectares: 0, productivity: 0, unitPrice: 0, costPerHectare: 0 });
+    const item = calculateItem({
+      areaHectares: 0,
+      productivity: 0,
+      unitPrice: 0,
+      costPerHectare: 0,
+    });
     const total = consolidate([item]);
     expect(total.profitMarginPercentage).toBe('0.00');
     expect(total.totalRevenue).toBe('0.00');
   });
 
   it('receita líquida negativa é permitida (custo maior que faturamento é um resultado válido)', () => {
-    const item = calculateItem({ areaHectares: 100, productivity: 1, unitPrice: 10, costPerHectare: 500 });
+    const item = calculateItem({
+      areaHectares: 100,
+      productivity: 1,
+      unitPrice: 10,
+      costPerHectare: 500,
+    });
     // Faturamento = 100*1*10 = 1.000,00 · Custo = 100*500 = 50.000,00
     expect(item.netProfit).toBe('-49000.00');
   });

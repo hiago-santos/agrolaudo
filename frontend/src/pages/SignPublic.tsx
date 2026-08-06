@@ -7,7 +7,14 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Seal } from '@/components/ui/Seal';
 import { SkeletonTable, SkeletonText } from '@/components/ui/Skeleton';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Table';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/Table';
 import { ApiError } from '@/lib/api';
 import { formatCurrency } from '@/lib/format';
 import { unitLabel } from '@/lib/units';
@@ -35,7 +42,9 @@ export function SignPublic() {
     publicService
       .getProject(projectId, token)
       .then(setData)
-      .catch((e: unknown) => setError(e instanceof ApiError ? e.message : 'Não foi possível abrir este projeto.'))
+      .catch((e: unknown) =>
+        setError(e instanceof ApiError ? e.message : 'Não foi possível abrir este projeto.'),
+      )
       .finally(() => setLoading(false));
   }, [projectId, token]);
 
@@ -60,7 +69,9 @@ export function SignPublic() {
       <div className="mx-auto flex max-w-2xl flex-col items-center gap-1 pb-8 text-center">
         <Seal size="md" />
         <h1 className="mt-3 font-display text-lg font-semibold text-text">AgroLaudo</h1>
-        <p className="text-sm text-text-secondary">Assinatura digital do Laudo de Capacidade Pagadora</p>
+        <p className="text-sm text-text-secondary">
+          Assinatura digital do Laudo de Capacidade Pagadora
+        </p>
       </div>
 
       <div className="mx-auto max-w-2xl">
@@ -83,7 +94,9 @@ export function SignPublic() {
         {!loading && data && !error && (signed || data.alreadySigned) && (
           <Card className="flex flex-col items-center gap-2 p-8 text-center">
             <CheckCircle2 className="h-8 w-8 text-success" />
-            <p className="font-display text-sm font-medium text-text">Assinatura registrada com sucesso.</p>
+            <p className="font-display text-sm font-medium text-text">
+              Assinatura registrada com sucesso.
+            </p>
             <p className="text-xs text-text-secondary">
               O projeto {data.project.number} foi atualizado. Pode fechar esta página.
             </p>
@@ -101,7 +114,8 @@ export function SignPublic() {
               <div className="space-y-1 p-5 text-sm">
                 <p className="font-mono font-medium text-text">{data.project.number}</p>
                 <p className="text-text-secondary">
-                  {data.project.producer.name} · {data.project.property.name} · Safra {data.project.season.label}
+                  {data.project.producer.name} · {data.project.property.name} · Safra{' '}
+                  {data.project.season.label}
                 </p>
               </div>
               <Table className="min-w-[480px]">

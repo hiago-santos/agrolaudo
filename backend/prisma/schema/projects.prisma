@@ -1,8 +1,12 @@
 // ─────────────────────────── Projeto ───────────────────────────
 
-/// DRAFT -> PENDING_SIGNATURES -> SIGNED -> UNDER_BANK_REVIEW -> APPROVED | REJECTED
+/// BANK_INITIATED -> DRAFT -> PENDING_SIGNATURES -> SIGNED -> UNDER_BANK_REVIEW -> APPROVED | REJECTED
+/// BANK_INITIATED é opcional — só existe quando o projeto nasce como "casca" aberta pelo banco
+/// (produtor+propriedade+área financiada, sem atividades ainda). Nesse caso o agrônomo completa
+/// as atividades depois e o projeto migra pra DRAFT (ver projects.service.ts updateProject).
 /// CANCELLED é alcançável de qualquer estado não-terminal.
 enum ProjectStatus {
+  BANK_INITIATED
   DRAFT
   PENDING_SIGNATURES
   SIGNED
@@ -55,11 +59,22 @@ model Project {
   issueDate   DateTime      @default(now()) @map("issue_date")
   notes       String?
 
+  /// Polígono GeoJSON da área da propriedade pleiteada pro financiamento (pode ser menor
+  /// que a propriedade inteira). Preenchido na abertura pelo banco; ajustável pelo agrônomo
+  /// ao completar o projeto.
+  financedAreaBoundary Json?    @map("financed_area_boundary")
+  financedAreaHectares Decimal? @map("financed_area_hectares") @db.Decimal(14, 2)
+
+  /// Usuário (papel BANK) que abriu a "casca" do projeto — null quando o projeto nasceu
+  /// direto como DRAFT pelo fluxo normal do agrônomo.
+  initiatedById String? @map("initiated_by_id") @db.Uuid
+  initiatedBy   User?   @relation("ProjectInitiator", fields: [initiatedById], references: [id])
+
   // Consolidado — resultado de core.consolidate() sobre os itens.
   totalRevenue           Decimal @default(0) @map("total_revenue") @db.Decimal(18, 2)
-  totalCost               Decimal @default(0) @map("total_cost") @db.Decimal(18, 2)
-  totalProfit             Decimal @default(0) @map("total_profit") @db.Decimal(18, 2)
-  profitMarginPercentage  Decimal @default(0) @map("profit_margin_percentage") @db.Decimal(6, 2)
+  totalCost              Decimal @default(0) @map("total_cost") @db.Decimal(18, 2)
+  totalProfit            Decimal @default(0) @map("total_profit") @db.Decimal(18, 2)
+  profitMarginPercentage Decimal @default(0) @map("profit_margin_percentage") @db.Decimal(6, 2)
 
   documentHash String? @map("document_hash")
 

@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { geoJsonPolygonSchema } from '../lib/geo.js';
+
 export const createPropertyBodySchema = z.object({
   producerId: z.string().min(1),
   name: z.string().min(1),
@@ -11,6 +13,9 @@ export const createPropertyBodySchema = z.object({
   ruralEnvironmentalRegistry: z.string().optional(),
   latitude: z.coerce.number().optional(),
   longitude: z.coerce.number().optional(),
+  /// Polígono desenhado no mapa — quando presente, `latitude`/`longitude` e
+  /// `boundaryAreaHectares` são recalculados a partir dele (ver properties.service.ts).
+  boundary: geoJsonPolygonSchema.optional(),
 });
 
 export const updatePropertyBodySchema = createPropertyBodySchema.partial().omit({

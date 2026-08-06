@@ -1,5 +1,5 @@
 import { api } from '@/lib/api';
-import type { Paginated, Property } from '@/types/domain';
+import type { GeoPolygon, Paginated, Property } from '@/types/domain';
 
 export interface PropertyInput {
   producerId: string;
@@ -12,10 +12,13 @@ export interface PropertyInput {
   ruralEnvironmentalRegistry?: string;
   latitude?: number;
   longitude?: number;
+  boundary?: GeoPolygon;
 }
 
 export const propertiesService = {
-  list: (params: { producerId?: string; search?: string; page?: number; pageSize?: number } = {}) => {
+  list: (
+    params: { producerId?: string; search?: string; page?: number; pageSize?: number } = {},
+  ) => {
     const query = new URLSearchParams();
     if (params.producerId) query.set('producerId', params.producerId);
     if (params.search) query.set('search', params.search);
@@ -24,7 +27,8 @@ export const propertiesService = {
     return api<Paginated<Property>>(`/properties?${query.toString()}`);
   },
   get: (id: string) => api<Property>(`/properties/${id}`),
-  create: (data: PropertyInput) => api<Property>('/properties', { method: 'POST', body: JSON.stringify(data) }),
+  create: (data: PropertyInput) =>
+    api<Property>('/properties', { method: 'POST', body: JSON.stringify(data) }),
   update: (id: string, data: Partial<Omit<PropertyInput, 'producerId'>>) =>
     api<Property>(`/properties/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
   remove: (id: string) => api<void>(`/properties/${id}`, { method: 'DELETE' }),

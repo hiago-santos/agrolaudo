@@ -39,10 +39,16 @@ const publicRoutes: FastifyPluginAsyncZod = async (app) => {
       },
     },
     async (request) =>
-      signaturesService.signPublic(app.prisma, request.params.id, request.body.token, request.body.imageBase64, {
-        ip: request.ip,
-        userAgent: request.headers['user-agent'],
-      }),
+      signaturesService.signPublic(
+        app.prisma,
+        request.params.id,
+        request.body.token,
+        request.body.imageBase64,
+        {
+          ip: request.ip,
+          userAgent: request.headers['user-agent'],
+        },
+      ),
   );
 
   app.get(

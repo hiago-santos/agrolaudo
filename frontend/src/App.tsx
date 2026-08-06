@@ -3,8 +3,10 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { Toaster } from '@/components/ui/Toaster';
 import { AppShell } from '@/components/layout/AppShell';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
+import { CompleteProject } from '@/pages/CompleteProject';
 import { Dashboard } from '@/pages/Dashboard';
 import { Login } from '@/pages/Login';
+import { NewBankProject } from '@/pages/NewBankProject';
 import { NewProject } from '@/pages/NewProject';
 import { Prices } from '@/pages/Prices';
 import { ProducerDetail } from '@/pages/ProducerDetail';
@@ -40,6 +42,22 @@ export function App() {
             element={
               <RequireRole roles={['ADMIN', 'AGRONOMIST']}>
                 <NewProject />
+              </RequireRole>
+            }
+          />
+          <Route
+            path="/projects/initiate"
+            element={
+              <RequireRole roles={['ADMIN', 'BANK']}>
+                <NewBankProject />
+              </RequireRole>
+            }
+          />
+          <Route
+            path="/projects/:id/complete"
+            element={
+              <RequireRole roles={['ADMIN', 'AGRONOMIST']}>
+                <CompleteProject />
               </RequireRole>
             }
           />

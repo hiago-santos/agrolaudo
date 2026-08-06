@@ -47,7 +47,9 @@ export function VerifyPublic() {
           <Card className="flex flex-col items-center gap-3 p-8 text-center">
             <XCircle className="h-9 w-9 text-danger" />
             <div>
-              <p className="font-display text-sm font-semibold text-text">Documento não encontrado</p>
+              <p className="font-display text-sm font-semibold text-text">
+                Documento não encontrado
+              </p>
               <p className="mt-1 text-xs text-text-secondary">
                 Este código não corresponde a nenhum projeto assinado no AgroLaudo.
               </p>
@@ -69,7 +71,10 @@ export function VerifyPublic() {
               <Line label="Produtor" value={data.producer} />
               <Line label="Propriedade" value={data.property} />
               <Line label="Safra" value={data.season} />
-              <Line label="Agrônomo" value={`${data.agronomist.name} · ${data.agronomist.licenseNumber}`} />
+              <Line
+                label="Agrônomo"
+                value={`${data.agronomist.name} · ${data.agronomist.licenseNumber}`}
+              />
               <Line label="Status" value={PROJECT_STATUS_LABEL[data.status]} />
               <Line label="Emitido em" value={formatDate(data.issueDate)} />
               {data.approvedCreditLimit && (
@@ -85,7 +90,9 @@ export function VerifyPublic() {
               {data.signatures.map((s) => (
                 <div key={s.type} className="flex items-center justify-between text-xs">
                   <span className="text-text-secondary">{s.signatoryName}</span>
-                  <span className="text-text">{s.signedAt ? formatDateTime(s.signedAt) : 'pendente'}</span>
+                  <span className="text-text">
+                    {s.signedAt ? formatDateTime(s.signedAt) : 'pendente'}
+                  </span>
                 </div>
               ))}
             </div>

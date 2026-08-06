@@ -47,7 +47,10 @@ export function SkeletonTable({ rows = 6, columns = 5 }: { rows?: number; column
       {rowKeys.map((rowKey) => (
         <div key={rowKey} className="flex gap-4 border-b border-border px-4 py-3.5 last:border-0">
           {placeholderKeys(columns, `${rowKey}-cell`).map((cellKey, columnIndex) => (
-            <Skeleton key={cellKey} className={cn('h-4 flex-1', columnIndex === 0 && 'max-w-[28%]')} />
+            <Skeleton
+              key={cellKey}
+              className={cn('h-4 flex-1', columnIndex === 0 && 'max-w-[28%]')}
+            />
           ))}
         </div>
       ))}

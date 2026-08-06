@@ -64,7 +64,9 @@ export function Topbar({ onOpenMobileNav }: TopbarProps) {
                 <User className="h-3.5 w-3.5" />
               </div>
               <span className="hidden text-left sm:block">
-                <span className="block text-xs font-medium leading-none text-text">{user?.name}</span>
+                <span className="block text-xs font-medium leading-none text-text">
+                  {user?.name}
+                </span>
                 <span className="mt-0.5 block text-[10px] uppercase tracking-wide leading-none text-text-tertiary">
                   {user ? (ROLE_LABEL[user.role] ?? user.role) : ''}
                 </span>

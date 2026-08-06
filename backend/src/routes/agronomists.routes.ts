@@ -38,9 +38,14 @@ const agronomistsRoutes: FastifyPluginAsyncZod = async (app) => {
     '/:id',
     {
       preHandler: [app.requireRole('ADMIN', 'AGRONOMIST')],
-      schema: { params: agronomistParamsSchema, body: updateAgronomistBodySchema, tags: ['agronomists'] },
+      schema: {
+        params: agronomistParamsSchema,
+        body: updateAgronomistBodySchema,
+        tags: ['agronomists'],
+      },
     },
-    async (request) => agronomistsService.updateAgronomist(app.prisma, request.params.id, request.body),
+    async (request) =>
+      agronomistsService.updateAgronomist(app.prisma, request.params.id, request.body),
   );
 };
 

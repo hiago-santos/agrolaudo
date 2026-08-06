@@ -26,13 +26,23 @@ export function SignaturesPanel({ project, onUpdated }: SignaturesPanelProps) {
   const canSign = useAuthStore((s) => s.hasRole('ADMIN', 'AGRONOMIST'));
 
   if (project.status === 'CANCELLED') {
-    return <Card className="p-5 text-sm text-text-secondary">Projeto cancelado — assinaturas não se aplicam.</Card>;
+    return (
+      <Card className="p-5 text-sm text-text-secondary">
+        Projeto cancelado — assinaturas não se aplicam.
+      </Card>
+    );
   }
 
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       {(['AGRONOMIST', 'PRODUCER'] as const).map((type) => (
-        <SignatureBlock key={type} type={type} project={project} canSign={canSign} onUpdated={onUpdated} />
+        <SignatureBlock
+          key={type}
+          type={type}
+          project={project}
+          canSign={canSign}
+          onUpdated={onUpdated}
+        />
       ))}
     </div>
   );
@@ -57,7 +67,8 @@ function SignatureBlock({
   const [link, setLink] = useState<string | null>(null);
 
   const signatoryName = type === 'AGRONOMIST' ? project.agronomist.name : project.producer.name;
-  const document = type === 'AGRONOMIST' ? project.agronomist.licenseNumber : project.producer.taxId;
+  const document =
+    type === 'AGRONOMIST' ? project.agronomist.licenseNumber : project.producer.taxId;
 
   async function confirmSignature() {
     if (!padRef.current || padRef.current.isEmpty()) {
@@ -98,7 +109,9 @@ function SignatureBlock({
   return (
     <Card className="space-y-3 p-5">
       <div>
-        <p className="text-xs font-semibold uppercase tracking-wide text-text-tertiary">{TYPE_LABEL[type]}</p>
+        <p className="text-xs font-semibold uppercase tracking-wide text-text-tertiary">
+          {TYPE_LABEL[type]}
+        </p>
         <p className="text-sm font-medium text-text">{signatoryName}</p>
         <p className="text-xs text-text-secondary">{document}</p>
       </div>
@@ -119,14 +132,23 @@ function SignatureBlock({
               <PenLine className="h-3.5 w-3.5" />
               Confirmar assinatura
             </Button>
-            <Button size="sm" variant="outline" onClick={() => void generateLink()} loading={generatingLink}>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => void generateLink()}
+              loading={generatingLink}
+            >
               <LinkIcon className="h-3.5 w-3.5" />
               Gerar link remoto
             </Button>
           </div>
           {link && (
             <div className="flex items-center gap-2 rounded-lg border border-border bg-bg-subtle px-2 py-1.5">
-              <input readOnly value={link} className="flex-1 truncate bg-transparent text-xs text-text-secondary" />
+              <input
+                readOnly
+                value={link}
+                className="flex-1 truncate bg-transparent text-xs text-text-secondary"
+              />
               <button
                 type="button"
                 onClick={copyLink}

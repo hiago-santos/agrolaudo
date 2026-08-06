@@ -1,7 +1,13 @@
 import pdfMake from 'pdfmake';
 import type { Content } from 'pdfmake';
 
-import { formatCurrency, formatDateTime, formatLongDate, formatNumber, formatPercentage } from './format.js';
+import {
+  formatCurrency,
+  formatDateTime,
+  formatLongDate,
+  formatNumber,
+  formatPercentage,
+} from './format.js';
 import type { ProjectDocument } from './types.js';
 
 /**
@@ -58,20 +64,32 @@ function signatureBlock(project: ProjectDocument, type: 'AGRONOMIST' | 'PRODUCER
   const signature = project.signatures.find((s) => s.type === type);
   const title = SIGNATURE_TYPE_LABELS[type] ?? type;
   const name = type === 'AGRONOMIST' ? project.agronomist.name : project.producer.name;
-  const document = type === 'AGRONOMIST' ? project.agronomist.licenseNumber : project.producer.taxId;
+  const document =
+    type === 'AGRONOMIST' ? project.agronomist.licenseNumber : project.producer.taxId;
 
   const stack: Content[] = [];
   if (signature?.imageBase64) {
     stack.push({ image: signature.imageBase64, width: 140, height: 60, margin: [0, 0, 0, 4] });
   } else {
-    stack.push({ text: '(assinatura pendente)', italics: true, color: MUTED, margin: [0, 20, 0, 4] });
+    stack.push({
+      text: '(assinatura pendente)',
+      italics: true,
+      color: MUTED,
+      margin: [0, 20, 0, 4],
+    });
   }
-  stack.push({ canvas: [{ type: 'line', x1: 0, y1: 0, x2: 200, y2: 0, lineWidth: 0.5, lineColor: BORDER }] });
+  stack.push({
+    canvas: [{ type: 'line', x1: 0, y1: 0, x2: 200, y2: 0, lineWidth: 0.5, lineColor: BORDER }],
+  });
   stack.push({ text: name, bold: true, fontSize: 10, margin: [0, 4, 0, 0] });
   stack.push({ text: document, fontSize: 9, color: MUTED });
   stack.push({ text: title, fontSize: 9, color: MUTED });
   if (signature?.signedAt) {
-    stack.push({ text: `Assinado em ${formatDateTime(signature.signedAt)}`, fontSize: 8, color: MUTED });
+    stack.push({
+      text: `Assinado em ${formatDateTime(signature.signedAt)}`,
+      fontSize: 8,
+      color: MUTED,
+    });
   }
 
   return { stack, width: '*' };
@@ -125,7 +143,13 @@ export async function generateProjectPdf(
         {
           width: '*',
           stack: [
-            { text: 'Produtor', fontSize: 11, bold: true, color: LIGHT_GREEN, margin: [0, 0, 0, 4] },
+            {
+              text: 'Produtor',
+              fontSize: 11,
+              bold: true,
+              color: LIGHT_GREEN,
+              margin: [0, 0, 0, 4],
+            },
             infoRow('Nome', project.producer.name),
             infoRow('CPF/CNPJ', project.producer.taxId),
             infoRow('Município', `${project.producer.city}-${project.producer.state}`),
@@ -134,7 +158,13 @@ export async function generateProjectPdf(
         {
           width: '*',
           stack: [
-            { text: 'Propriedade', fontSize: 11, bold: true, color: LIGHT_GREEN, margin: [0, 0, 0, 4] },
+            {
+              text: 'Propriedade',
+              fontSize: 11,
+              bold: true,
+              color: LIGHT_GREEN,
+              margin: [0, 0, 0, 4],
+            },
             infoRow('Nome', project.property.name),
             infoRow('Matrícula', project.property.registrationNumber),
             infoRow('Área total', `${formatNumber(project.property.totalAreaHectares)} ha`),
@@ -149,7 +179,13 @@ export async function generateProjectPdf(
         {
           width: '*',
           stack: [
-            { text: 'Agrônomo responsável', fontSize: 11, bold: true, color: LIGHT_GREEN, margin: [0, 0, 0, 4] },
+            {
+              text: 'Agrônomo responsável',
+              fontSize: 11,
+              bold: true,
+              color: LIGHT_GREEN,
+              margin: [0, 0, 0, 4],
+            },
             infoRow('Nome', project.agronomist.name),
             infoRow('CREA', project.agronomist.licenseNumber),
           ],
@@ -157,7 +193,13 @@ export async function generateProjectPdf(
         {
           width: '*',
           stack: [
-            { text: 'Safra e emissão', fontSize: 11, bold: true, color: LIGHT_GREEN, margin: [0, 0, 0, 4] },
+            {
+              text: 'Safra e emissão',
+              fontSize: 11,
+              bold: true,
+              color: LIGHT_GREEN,
+              margin: [0, 0, 0, 4],
+            },
             infoRow('Safra', project.season.label),
             infoRow('Emitido em', `${project.issuingCity}, ${formatLongDate(project.issueDate)}`),
           ],
@@ -166,7 +208,13 @@ export async function generateProjectPdf(
       columnGap: 20,
       margin: [0, 0, 0, 16],
     },
-    { text: 'Quadro de Produção', fontSize: 12, bold: true, color: LIGHT_GREEN, margin: [0, 0, 0, 6] },
+    {
+      text: 'Quadro de Produção',
+      fontSize: 12,
+      bold: true,
+      color: LIGHT_GREEN,
+      margin: [0, 0, 0, 6],
+    },
     {
       table: {
         headerRows: 1,
@@ -186,7 +234,8 @@ export async function generateProjectPdf(
         ],
       },
       layout: {
-        fillColor: (rowIndex: number) => (rowIndex === 0 ? LIGHT_GREEN : rowIndex % 2 === 0 ? '#F3F4F6' : null),
+        fillColor: (rowIndex: number) =>
+          rowIndex === 0 ? LIGHT_GREEN : rowIndex % 2 === 0 ? '#F3F4F6' : null,
         hLineWidth: () => 0.5,
         vLineWidth: () => 0,
         hLineColor: () => BORDER,
@@ -201,15 +250,30 @@ export async function generateProjectPdf(
           table: {
             widths: ['*', 'auto'],
             body: [
-              [{ text: 'Faturamento total', fontSize: 9 }, { text: formatCurrency(project.totalRevenue), fontSize: 9, alignment: 'right' }],
-              [{ text: 'Custo total', fontSize: 9 }, { text: formatCurrency(project.totalCost), fontSize: 9, alignment: 'right' }],
+              [
+                { text: 'Faturamento total', fontSize: 9 },
+                { text: formatCurrency(project.totalRevenue), fontSize: 9, alignment: 'right' },
+              ],
+              [
+                { text: 'Custo total', fontSize: 9 },
+                { text: formatCurrency(project.totalCost), fontSize: 9, alignment: 'right' },
+              ],
               [
                 { text: 'Receita líquida', fontSize: 10, bold: true },
-                { text: formatCurrency(project.totalProfit), fontSize: 10, bold: true, alignment: 'right' },
+                {
+                  text: formatCurrency(project.totalProfit),
+                  fontSize: 10,
+                  bold: true,
+                  alignment: 'right',
+                },
               ],
               [
                 { text: 'Margem', fontSize: 9 },
-                { text: formatPercentage(project.profitMarginPercentage), fontSize: 9, alignment: 'right' },
+                {
+                  text: formatPercentage(project.profitMarginPercentage),
+                  fontSize: 9,
+                  alignment: 'right',
+                },
               ],
             ],
           },
@@ -222,11 +286,19 @@ export async function generateProjectPdf(
 
   if (project.approvedCreditLimit || project.bankNotes || project.status === 'UNDER_BANK_REVIEW') {
     content.push(
-      { text: 'Análise do Banco', fontSize: 12, bold: true, color: LIGHT_GREEN, margin: [0, 0, 0, 6] },
+      {
+        text: 'Análise do Banco',
+        fontSize: 12,
+        bold: true,
+        color: LIGHT_GREEN,
+        margin: [0, 0, 0, 6],
+      },
       infoRow('Status', STATUS_LABELS[project.status] ?? project.status),
     );
     if (project.approvedCreditLimit) {
-      content.push(infoRow('Limite de crédito aprovado', formatCurrency(project.approvedCreditLimit)));
+      content.push(
+        infoRow('Limite de crédito aprovado', formatCurrency(project.approvedCreditLimit)),
+      );
     }
     if (project.bankNotes) {
       content.push({ text: project.bankNotes, fontSize: 9, italics: true, margin: [0, 4, 0, 0] });
@@ -250,7 +322,13 @@ export async function generateProjectPdf(
           width: 90,
           stack: [
             { image: qrCodeDataUrl, width: 70, height: 70, alignment: 'center' },
-            { text: 'Verificar autenticidade', fontSize: 7, color: MUTED, alignment: 'center', margin: [0, 2, 0, 0] },
+            {
+              text: 'Verificar autenticidade',
+              fontSize: 7,
+              color: MUTED,
+              alignment: 'center',
+              margin: [0, 2, 0, 0],
+            },
           ],
         },
       ],

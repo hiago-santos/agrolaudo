@@ -1,9 +1,5 @@
 import { forwardRef } from 'react';
-import type {
-  InputHTMLAttributes,
-  LabelHTMLAttributes,
-  TextareaHTMLAttributes,
-} from 'react';
+import type { InputHTMLAttributes, LabelHTMLAttributes, TextareaHTMLAttributes } from 'react';
 
 import { cn } from '@/lib/cn';
 
@@ -23,17 +19,21 @@ export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputE
 );
 Input.displayName = 'Input';
 
-export const Textarea = forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes<HTMLTextAreaElement>>(
-  ({ className, ...props }, ref) => (
-    <textarea ref={ref} className={cn(FIELD_BASE, 'min-h-20 py-2', className)} {...props} />
-  ),
-);
+export const Textarea = forwardRef<
+  HTMLTextAreaElement,
+  TextareaHTMLAttributes<HTMLTextAreaElement>
+>(({ className, ...props }, ref) => (
+  <textarea ref={ref} className={cn(FIELD_BASE, 'min-h-20 py-2', className)} {...props} />
+));
 Textarea.displayName = 'Textarea';
 
 export function Label({ className, ...props }: LabelHTMLAttributes<HTMLLabelElement>) {
   return (
     <label
-      className={cn('mb-1.5 block text-xs font-medium uppercase tracking-wide text-text-secondary', className)}
+      className={cn(
+        'mb-1.5 block text-xs font-medium uppercase tracking-wide text-text-secondary',
+        className,
+      )}
       {...props}
     />
   );

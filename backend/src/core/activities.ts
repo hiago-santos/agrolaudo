@@ -7,10 +7,7 @@ import type { UnitCode } from './units.js';
  * é um identificador de código, em inglês.
  */
 export type ActivityCategory =
-  | 'GRAINS_FIBERS'
-  | 'PERMANENT_FRUIT'
-  | 'SEMI_PERMANENT'
-  | 'LIVESTOCK_PASTURE';
+  'GRAINS_FIBERS' | 'PERMANENT_FRUIT' | 'SEMI_PERMANENT' | 'LIVESTOCK_PASTURE';
 
 export interface ActivityConfig {
   slug: string;

@@ -5,7 +5,11 @@
  * container de dependências (app.ts); nada no resto do sistema muda.
  */
 export interface NotificationPort {
-  sendSignatureLink(params: { signatoryName: string; projectNumber: string; link: string }): Promise<void>;
+  sendSignatureLink(params: {
+    signatoryName: string;
+    projectNumber: string;
+    link: string;
+  }): Promise<void>;
 }
 
 export class ConsoleNotificationAdapter implements NotificationPort {

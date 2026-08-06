@@ -5,7 +5,14 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Label, Textarea } from '@/components/ui/Input';
 import { SkeletonTable } from '@/components/ui/Skeleton';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Table';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/Table';
 import { ApiError } from '@/lib/api';
 import { formatCurrency, formatPercentage } from '@/lib/format';
 import { unitLabel } from '@/lib/units';
@@ -19,26 +26,40 @@ interface Step3Props {
   draft: ProjectDraft;
   onChange: (patch: Partial<ProjectDraft>) => void;
   onBack: () => void;
+  /**
+   * Presente quando este passo está completando um projeto já existente (aberto pelo
+   * banco, ver CompleteProject.tsx) — o botão final atualiza esse projeto (o que já
+   * transiciona BANK_INITIATED -> DRAFT no backend) em vez de criar um novo.
+   */
+  projectId?: string;
 }
 
-export function Step3Review({ draft, onChange, onBack }: Step3Props) {
+export function Step3Review({ draft, onChange, onBack, projectId }: Step3Props) {
   const navigate = useNavigate();
   const [result, setResult] = useState<ProjectCalculationResult | null>(null);
   const [loadingResult, setLoadingResult] = useState(true);
   const [issuing, setIssuing] = useState(false);
 
-  const selectedItems = useMemo(() => Object.values(draft.items).filter((item) => item.selected), [draft.items]);
+  const selectedItems = useMemo(
+    () => Object.values(draft.items).filter((item) => item.selected),
+    [draft.items],
+  );
+
+  const itemsInput: ProjectItemInput[] = useMemo(
+    () =>
+      selectedItems.map((item) => ({
+        activityId: item.activity.id,
+        unit: item.unit,
+        areaHectares: Number(item.areaHectares || 0),
+        productivity: Number(item.productivity || 0),
+        unitPrice: Number(item.unitPrice || 0),
+        costPerHectare: Number(item.costPerHectare || 0),
+        herdHeadCount: item.activity.isLivestock ? Number(item.herdHeadCount || 0) : undefined,
+      })),
+    [selectedItems],
+  );
 
   useEffect(() => {
-    const itemsInput: ProjectItemInput[] = selectedItems.map((item) => ({
-      activityId: item.activity.id,
-      unit: item.unit,
-      areaHectares: Number(item.areaHectares || 0),
-      productivity: Number(item.productivity || 0),
-      unitPrice: Number(item.unitPrice || 0),
-      costPerHectare: Number(item.costPerHectare || 0),
-      herdHeadCount: item.activity.isLivestock ? Number(item.herdHeadCount || 0) : undefined,
-    }));
     setLoadingResult(true);
     projectsService
       .calculate(itemsInput)
@@ -51,8 +72,20 @@ export function Step3Review({ draft, onChange, onBack }: Step3Props) {
   async function issue() {
     setIssuing(true);
     try {
+      if (projectId) {
+        await projectsService.update(projectId, {
+          items: itemsInput,
+          notes: draft.notes || undefined,
+        });
+        toast.success('Projeto completado.', 'Colete as assinaturas na tela de detalhe.');
+        navigate(`/projects/${projectId}`);
+        return;
+      }
       const created = await projectsService.create(draftToProjectInput(draft));
-      toast.success(`Projeto ${created.number} emitido.`, 'Colete as assinaturas na tela de detalhe.');
+      toast.success(
+        `Projeto ${created.number} emitido.`,
+        'Colete as assinaturas na tela de detalhe.',
+      );
       navigate(`/projects/${created.id}`);
     } catch (e) {
       toast.error(e instanceof ApiError ? e.message : 'Não foi possível emitir o projeto.');
@@ -73,15 +106,19 @@ export function Step3Review({ draft, onChange, onBack }: Step3Props) {
         />
       </Card>
 
-      <Card className="p-5">
-        <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-text-secondary">Resumo</p>
-        <div className="grid gap-3 text-sm sm:grid-cols-2">
-          <SummaryLine label="Produtor" value={draft.producer?.name ?? '—'} />
-          <SummaryLine label="Propriedade" value={draft.property?.name ?? '—'} />
-          <SummaryLine label="Safra" value={draft.season?.label ?? '—'} />
-          <SummaryLine label="Cidade de emissão" value={draft.issuingCity || '—'} />
-        </div>
-      </Card>
+      {!projectId && (
+        <Card className="p-5">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-text-secondary">
+            Resumo
+          </p>
+          <div className="grid gap-3 text-sm sm:grid-cols-2">
+            <SummaryLine label="Produtor" value={draft.producer?.name ?? '—'} />
+            <SummaryLine label="Propriedade" value={draft.property?.name ?? '—'} />
+            <SummaryLine label="Safra" value={draft.season?.label ?? '—'} />
+            <SummaryLine label="Cidade de emissão" value={draft.issuingCity || '—'} />
+          </div>
+        </Card>
+      )}
 
       <Card className="overflow-hidden">
         <div className="border-b border-border bg-bg-subtle/50 px-5 py-2.5">
@@ -108,7 +145,9 @@ export function Step3Review({ draft, onChange, onBack }: Step3Props) {
                   <TableRow key={item.activityId}>
                     <TableCell className="font-medium">{item.activityName}</TableCell>
                     <TableCell className="text-text-secondary">{unitLabel(item.unit)}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(item.grossRevenue)}</TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(item.grossRevenue)}
+                    </TableCell>
                     <TableCell className="text-right">{formatCurrency(item.totalCost)}</TableCell>
                     <TableCell className="text-right font-medium text-accent">
                       {formatCurrency(item.netProfit)}
@@ -120,8 +159,14 @@ export function Step3Review({ draft, onChange, onBack }: Step3Props) {
 
             {result && (
               <div className="grid grid-cols-2 gap-4 border-t border-border p-5 sm:grid-cols-4">
-                <SummaryLine label="Faturamento total" value={formatCurrency(result.consolidated.totalRevenue)} />
-                <SummaryLine label="Custo total" value={formatCurrency(result.consolidated.totalCost)} />
+                <SummaryLine
+                  label="Faturamento total"
+                  value={formatCurrency(result.consolidated.totalRevenue)}
+                />
+                <SummaryLine
+                  label="Custo total"
+                  value={formatCurrency(result.consolidated.totalCost)}
+                />
                 <SummaryLine
                   label="Receita líquida"
                   value={formatCurrency(result.consolidated.totalProfit)}
@@ -142,18 +187,32 @@ export function Step3Review({ draft, onChange, onBack }: Step3Props) {
           Voltar
         </Button>
         <Button onClick={() => void issue()} loading={issuing}>
-          Concluir e Emitir Projeto
+          {projectId ? 'Salvar Atividades do Projeto' : 'Concluir e Emitir Projeto'}
         </Button>
       </div>
     </div>
   );
 }
 
-function SummaryLine({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
+function SummaryLine({
+  label,
+  value,
+  highlight,
+}: {
+  label: string;
+  value: string;
+  highlight?: boolean;
+}) {
   return (
     <div>
       <p className="text-[10px] uppercase tracking-wide text-text-tertiary">{label}</p>
-      <p className={highlight ? 'text-sm font-semibold text-accent' : 'text-sm font-medium text-text'}>{value}</p>
+      <p
+        className={
+          highlight ? 'text-sm font-semibold text-accent' : 'text-sm font-medium text-text'
+        }
+      >
+        {value}
+      </p>
     </div>
   );
 }

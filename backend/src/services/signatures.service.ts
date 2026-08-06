@@ -24,7 +24,10 @@ function generateToken(): string {
 
 function signatoryData(project: Awaited<ReturnType<typeof getProject>>, type: SignatureType) {
   return type === 'AGRONOMIST'
-    ? { signatoryName: project.agronomist.name, signatoryDocument: project.agronomist.licenseNumber }
+    ? {
+        signatoryName: project.agronomist.name,
+        signatoryDocument: project.agronomist.licenseNumber,
+      }
     : { signatoryName: project.producer.name, signatoryDocument: project.producer.taxId };
 }
 
@@ -125,7 +128,9 @@ async function findSignatureByToken(prisma: PrismaClient, projectId: string, tok
     throw new UnauthorizedError('Link de assinatura inválido.');
   }
   if (signature.tokenExpiresAt && signature.tokenExpiresAt < new Date()) {
-    throw new UnauthorizedError('Este link de assinatura expirou. Peça para o agrônomo gerar um novo.');
+    throw new UnauthorizedError(
+      'Este link de assinatura expirou. Peça para o agrônomo gerar um novo.',
+    );
   }
   return signature;
 }

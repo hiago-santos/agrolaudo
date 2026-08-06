@@ -102,7 +102,12 @@ interface DropdownMenuItemProps {
   icon?: ReactNode;
 }
 
-export function DropdownMenuItem({ onSelect, children, tone = 'default', icon }: DropdownMenuItemProps) {
+export function DropdownMenuItem({
+  onSelect,
+  children,
+  tone = 'default',
+  icon,
+}: DropdownMenuItemProps) {
   const close = useContext(DropdownMenuContext);
 
   return (

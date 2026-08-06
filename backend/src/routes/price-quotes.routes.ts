@@ -1,14 +1,19 @@
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 
 import { ValidationError } from '../lib/errors.js';
-import { priceQuoteHistoryParamsSchema, updatePriceQuotesBodySchema } from '../schemas/price-quotes.schemas.js';
+import {
+  priceQuoteHistoryParamsSchema,
+  updatePriceQuotesBodySchema,
+} from '../schemas/price-quotes.schemas.js';
 import * as priceQuotesService from '../services/price-quotes.service.js';
 
 const priceQuotesRoutes: FastifyPluginAsyncZod = async (app) => {
   app.addHook('preHandler', app.authenticate);
 
-  app.get('/', { schema: { tags: ['price-quotes'], summary: 'Matriz de preços atual' } }, async () =>
-    priceQuotesService.getCurrentPriceMatrix(app.prisma),
+  app.get(
+    '/',
+    { schema: { tags: ['price-quotes'], summary: 'Matriz de preços atual' } },
+    async () => priceQuotesService.getCurrentPriceMatrix(app.prisma),
   );
 
   app.put(
@@ -28,7 +33,8 @@ const priceQuotesRoutes: FastifyPluginAsyncZod = async (app) => {
   app.get(
     '/:activityId/history',
     { schema: { params: priceQuoteHistoryParamsSchema, tags: ['price-quotes'] } },
-    async (request) => priceQuotesService.getActivityPriceHistory(app.prisma, request.params.activityId),
+    async (request) =>
+      priceQuotesService.getActivityPriceHistory(app.prisma, request.params.activityId),
   );
 
   app.get(

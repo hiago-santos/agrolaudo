@@ -1,17 +1,21 @@
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 
-import { createSeasonBodySchema, seasonParamsSchema, updateSeasonBodySchema } from '../schemas/seasons.schemas.js';
+import {
+  createSeasonBodySchema,
+  seasonParamsSchema,
+  updateSeasonBodySchema,
+} from '../schemas/seasons.schemas.js';
 import * as seasonsService from '../services/seasons.service.js';
 
 const seasonsRoutes: FastifyPluginAsyncZod = async (app) => {
   app.addHook('preHandler', app.authenticate);
 
-  app.get('/', { schema: { tags: ['seasons'] } }, async () => seasonsService.listSeasons(app.prisma));
+  app.get('/', { schema: { tags: ['seasons'] } }, async () =>
+    seasonsService.listSeasons(app.prisma),
+  );
 
-  app.get(
-    '/:id',
-    { schema: { params: seasonParamsSchema, tags: ['seasons'] } },
-    async (request) => seasonsService.getSeason(app.prisma, request.params.id),
+  app.get('/:id', { schema: { params: seasonParamsSchema, tags: ['seasons'] } }, async (request) =>
+    seasonsService.getSeason(app.prisma, request.params.id),
   );
 
   app.post(

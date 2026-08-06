@@ -19,7 +19,11 @@ interface PriceMatrixItemDto {
 }
 
 async function login(app: FastifyInstance, email: string, password: string): Promise<string> {
-  const res = await app.inject({ method: 'POST', url: '/auth/login', payload: { email, password } });
+  const res = await app.inject({
+    method: 'POST',
+    url: '/auth/login',
+    payload: { email, password },
+  });
   if (res.statusCode !== 200) {
     throw new Error(
       `Login de teste falhou para ${email} — rode \`pnpm db:seed\` antes de \`pnpm test:integration\`.`,
@@ -75,8 +79,20 @@ describe('Integração — fluxo de projeto (precisa do banco seedado)', () => {
       headers: bearer(agronomistToken),
       payload: {
         items: [
-          { activityId: idBySlug('sugarcane'), areaHectares: 900, productivity: 100, unitPrice: 152, costPerHectare: 9000 },
-          { activityId: idBySlug('soybean'), areaHectares: 500, productivity: 70, unitPrice: 131, costPerHectare: 5461.94 },
+          {
+            activityId: idBySlug('sugarcane'),
+            areaHectares: 900,
+            productivity: 100,
+            unitPrice: 152,
+            costPerHectare: 9000,
+          },
+          {
+            activityId: idBySlug('soybean'),
+            areaHectares: 500,
+            productivity: 70,
+            unitPrice: 131,
+            costPerHectare: 5461.94,
+          },
           {
             activityId: idBySlug('cattle-raising'),
             areaHectares: 300,
@@ -148,7 +164,15 @@ describe('Integração — fluxo de projeto (precisa do banco seedado)', () => {
         propertyId: producer.properties[0]?.id,
         seasonId: seasons[0].id,
         agronomistId: agronomists[0].id,
-        items: [{ activityId: soybeanId, areaHectares: 10, productivity: 60, unitPrice: 100, costPerHectare: 1000 }],
+        items: [
+          {
+            activityId: soybeanId,
+            areaHectares: 10,
+            productivity: 60,
+            unitPrice: 100,
+            costPerHectare: 1000,
+          },
+        ],
       },
     });
     expect(created.statusCode).toBe(201);
@@ -161,7 +185,9 @@ describe('Integração — fluxo de projeto (precisa do banco seedado)', () => {
         method: 'PUT',
         url: '/price-quotes',
         headers: bearer(agronomistToken),
-        payload: { items: [{ activityId: soybeanId, unit: 'BAG_60KG', unitPrice: 999, costPerHectare: 999 }] },
+        payload: {
+          items: [{ activityId: soybeanId, unit: 'BAG_60KG', unitPrice: 999, costPerHectare: 999 }],
+        },
       });
       expect(updateRes.statusCode).toBe(200);
 

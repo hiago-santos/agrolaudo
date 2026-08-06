@@ -107,7 +107,9 @@ export function Dialog({
       }
       if (event.key !== 'Tab') return;
 
-      const focusable = Array.from(panelRef.current?.querySelectorAll<HTMLElement>(FOCUSABLE) ?? []);
+      const focusable = Array.from(
+        panelRef.current?.querySelectorAll<HTMLElement>(FOCUSABLE) ?? [],
+      );
       if (focusable.length === 0) return;
       const first = focusable[0];
       const last = focusable[focusable.length - 1];
@@ -135,7 +137,10 @@ export function Dialog({
         aria-label="Fechar"
         tabIndex={-1}
         onClick={onClose}
-        className={cn('absolute inset-0 bg-black/50', closing ? 'animate-fade-out' : 'animate-fade-in')}
+        className={cn(
+          'absolute inset-0 bg-black/50',
+          closing ? 'animate-fade-out' : 'animate-fade-in',
+        )}
       />
       <div
         ref={panelRef}
@@ -173,7 +178,10 @@ export function Dialog({
           </button>
         </div>
 
-        <div ref={contentRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-5">
+        <div
+          ref={contentRef}
+          className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-5"
+        >
           {children}
         </div>
 

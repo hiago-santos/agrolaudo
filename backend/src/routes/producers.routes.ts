@@ -47,7 +47,10 @@ const producersRoutes: FastifyPluginAsyncZod = async (app) => {
 
   app.delete(
     '/:id',
-    { preHandler: [app.requireRole('ADMIN')], schema: { params: producerParamsSchema, tags: ['producers'] } },
+    {
+      preHandler: [app.requireRole('ADMIN')],
+      schema: { params: producerParamsSchema, tags: ['producers'] },
+    },
     async (request, reply) => {
       await producersService.deleteProducer(app.prisma, request.params.id);
       reply.status(204);

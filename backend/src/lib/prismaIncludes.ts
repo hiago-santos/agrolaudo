@@ -22,6 +22,7 @@ export const PROJECT_DETAIL_INCLUDE = {
   season: true,
   agronomist: true,
   bankReviewer: { select: { id: true, name: true, email: true } },
+  initiatedBy: { select: { id: true, name: true, email: true } },
   items: { orderBy: { order: 'asc' as const } },
   signatures: true,
 } satisfies Prisma.ProjectInclude;

@@ -1,6 +1,7 @@
 import type { Prisma, PrismaClient } from '@prisma/client';
 
 import { ConflictError, NotFoundError } from '../lib/errors.js';
+import { polygonAreaHectares, polygonCentroid, type GeoJsonPolygon } from '../lib/geo.js';
 
 import type {
   createPropertyBodySchema,
@@ -10,6 +11,20 @@ import type { z } from 'zod';
 
 type CreatePropertyInput = z.infer<typeof createPropertyBodySchema>;
 type UpdatePropertyInput = z.infer<typeof updatePropertyBodySchema>;
+
+/** Quando um polígono é desenhado, o centro e a área passam a vir dele — não são mais editáveis à mão. */
+function withBoundaryDerivedFields<T extends { boundary?: GeoJsonPolygon }>(
+  data: T,
+): T & { latitude?: number; longitude?: number; boundaryAreaHectares?: number } {
+  if (!data.boundary) return data;
+  const { latitude, longitude } = polygonCentroid(data.boundary);
+  return {
+    ...data,
+    latitude,
+    longitude,
+    boundaryAreaHectares: polygonAreaHectares(data.boundary),
+  };
+}
 
 export async function listProperties(
   prisma: PrismaClient,
@@ -55,7 +70,9 @@ async function ensureUniqueRegistration(
     where: { producerId_registrationNumber: { producerId, registrationNumber } },
   });
   if (existing && existing.id !== ignoreId) {
-    throw new ConflictError(`Esse produtor já tem uma propriedade com a matrícula ${registrationNumber}.`);
+    throw new ConflictError(
+      `Esse produtor já tem uma propriedade com a matrícula ${registrationNumber}.`,
+    );
   }
 }
 
@@ -65,7 +82,7 @@ export async function createProperty(prisma: PrismaClient, data: CreatePropertyI
 
   await ensureUniqueRegistration(prisma, data.producerId, data.registrationNumber);
 
-  return prisma.property.create({ data });
+  return prisma.property.create({ data: withBoundaryDerivedFields(data) });
 }
 
 export async function updateProperty(prisma: PrismaClient, id: string, data: UpdatePropertyInput) {
@@ -75,7 +92,7 @@ export async function updateProperty(prisma: PrismaClient, id: string, data: Upd
     await ensureUniqueRegistration(prisma, property.producerId, data.registrationNumber, id);
   }
 
-  return prisma.property.update({ where: { id }, data });
+  return prisma.property.update({ where: { id }, data: withBoundaryDerivedFields(data) });
 }
 
 export async function deleteProperty(prisma: PrismaClient, id: string) {

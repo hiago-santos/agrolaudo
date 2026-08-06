@@ -8,7 +8,14 @@ import { Card } from '@/components/ui/Card';
 import { Dialog } from '@/components/ui/Dialog';
 import { Input, Select } from '@/components/ui/Input';
 import { SkeletonPageHeader, SkeletonTable } from '@/components/ui/Skeleton';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Table';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/Table';
 import { ApiError } from '@/lib/api';
 import { ACTIVITY_CATEGORY_LABEL, ACTIVITY_CATEGORY_ORDER } from '@/lib/activity-categories';
 import { formatCurrency, formatDateTime } from '@/lib/format';
@@ -72,7 +79,11 @@ export function Prices() {
     }));
   }, [matrix]);
 
-  function updateRow(activityId: string, field: 'unit' | 'unitPrice' | 'costPerHectare', value: string) {
+  function updateRow(
+    activityId: string,
+    field: 'unit' | 'unitPrice' | 'costPerHectare',
+    value: string,
+  ) {
     setRows((current) => {
       const currentRow = current[activityId];
       if (!currentRow) return current;
@@ -164,7 +175,13 @@ export function Prices() {
         description="Matriz de referência das 15 atividades — atualize aqui e todo projeto novo já nasce com o valor certo."
         actions={
           <>
-            <input ref={fileInputRef} type="file" accept=".xlsx" className="hidden" onChange={(e) => void onImport(e)} />
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".xlsx"
+              className="hidden"
+              onChange={(e) => void onImport(e)}
+            />
             <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
               <Upload className="h-3.5 w-3.5" />
               Importar
@@ -233,7 +250,9 @@ export function Prices() {
                         step="0.01"
                         min="0"
                         value={row.costPerHectare}
-                        onChange={(e) => updateRow(item.activity.id, 'costPerHectare', e.target.value)}
+                        onChange={(e) =>
+                          updateRow(item.activity.id, 'costPerHectare', e.target.value)
+                        }
                         className="ml-auto h-8 w-28 text-right font-mono tabular-nums"
                       />
                     </TableCell>
@@ -267,12 +286,17 @@ export function Prices() {
         ) : (
           <ul className="space-y-2">
             {history.map((h) => (
-              <li key={h.id} className="flex items-center justify-between rounded-lg border border-border px-3 py-2 text-sm">
+              <li
+                key={h.id}
+                className="flex items-center justify-between rounded-lg border border-border px-3 py-2 text-sm"
+              >
                 <div>
                   <p className="font-mono font-medium tabular-nums text-text">
                     {formatCurrency(h.unitPrice)} / {unitLabel(h.unit)}
                   </p>
-                  <p className="text-xs text-text-secondary">Custo/ha: {formatCurrency(h.costPerHectare)}</p>
+                  <p className="text-xs text-text-secondary">
+                    Custo/ha: {formatCurrency(h.costPerHectare)}
+                  </p>
                 </div>
                 <Badge tone="neutral">{formatDateTime(h.effectiveFrom)}</Badge>
               </li>

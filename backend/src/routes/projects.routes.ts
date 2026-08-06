@@ -10,6 +10,7 @@ import {
   calculateProjectBodySchema,
   createProjectBodySchema,
   duplicateProjectBodySchema,
+  initiateProjectBodySchema,
   listProjectsQuerySchema,
   projectParamsSchema,
   updateProjectBodySchema,
@@ -21,9 +22,10 @@ interface ProjectsRoutesOptions extends FastifyPluginOptions {
 }
 
 /**
- * Toda escrita (POST/PATCH) é restrita a ADMIN/AGRONOMIST. As leituras (GET) só
- * exigem sessão válida — é assim que o perfil BANK ("leitura + decisão pontual")
- * enxerga os projetos sem `if` de role espalhado pelos handlers.
+ * Escrita é restrita a ADMIN/AGRONOMIST, com uma exceção: POST /initiate (BANK abre a
+ * "casca" do projeto — produtor/propriedade/área financiada, sem atividades). As
+ * leituras (GET) só exigem sessão válida — é assim que o perfil BANK enxerga os
+ * projetos sem `if` de role espalhado pelos handlers.
  */
 const projectsRoutes: FastifyPluginAsyncZod<ProjectsRoutesOptions> = async (app, opts) => {
   app.addHook('preHandler', app.authenticate);
@@ -60,6 +62,28 @@ const projectsRoutes: FastifyPluginAsyncZod<ProjectsRoutesOptions> = async (app,
     },
     async (request, reply) => {
       const project = await projectsService.createProject(app.prisma, request.body);
+      reply.status(201);
+      return project;
+    },
+  );
+
+  app.post(
+    '/initiate',
+    {
+      preHandler: [app.requireRole('ADMIN', 'BANK')],
+      schema: {
+        body: initiateProjectBodySchema,
+        tags: ['projects'],
+        summary:
+          'Banco abre a "casca" do projeto (produtor, propriedade, área financiada) — sem atividades',
+      },
+    },
+    async (request, reply) => {
+      const project = await projectsService.initiateProject(
+        app.prisma,
+        request.user.sub,
+        request.body,
+      );
       reply.status(201);
       return project;
     },
@@ -122,7 +146,10 @@ const projectsRoutes: FastifyPluginAsyncZod<ProjectsRoutesOptions> = async (app,
       const project = await projectsService.getProject(app.prisma, request.params.id);
       const document = projectToDocument(project);
       const xlsx = await generateProjectXlsx(document);
-      reply.header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      reply.header(
+        'Content-Type',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      );
       reply.header('Content-Disposition', `attachment; filename="${project.number}.xlsx"`);
       return reply.send(xlsx);
     },

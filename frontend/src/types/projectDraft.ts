@@ -1,4 +1,4 @@
-import type { Activity, Producer, Property, Season } from '@/types/domain';
+import type { Activity, GeoPolygon, Producer, Property, Season } from '@/types/domain';
 
 export interface ItemDraft {
   selected: boolean;
@@ -19,6 +19,8 @@ export interface ProjectDraft {
   issuingCity: string;
   notes: string;
   items: Record<string, ItemDraft>;
+  /** Só usado no fluxo de abertura pelo banco (ver NewBankProject/StepFinancedArea). */
+  financedAreaBoundary: GeoPolygon | null;
 }
 
 export function emptyDraft(): ProjectDraft {
@@ -30,5 +32,6 @@ export function emptyDraft(): ProjectDraft {
     issuingCity: '',
     notes: '',
     items: {},
+    financedAreaBoundary: null,
   };
 }

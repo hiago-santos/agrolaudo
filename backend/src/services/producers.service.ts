@@ -3,7 +3,10 @@ import type { Prisma, PrismaClient } from '@prisma/client';
 import { PRODUCER_WITH_PROPERTIES_INCLUDE } from '../lib/prismaIncludes.js';
 import { ConflictError, NotFoundError } from '../lib/errors.js';
 
-import type { createProducerBodySchema, updateProducerBodySchema } from '../schemas/producers.schemas.js';
+import type {
+  createProducerBodySchema,
+  updateProducerBodySchema,
+} from '../schemas/producers.schemas.js';
 import type { z } from 'zod';
 
 type CreateProducerInput = z.infer<typeof createProducerBodySchema>;

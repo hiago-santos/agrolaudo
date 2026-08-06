@@ -10,7 +10,12 @@ const TEST_PROJECT: ProjectDocument = {
   issuingCity: 'Franca',
   issueDate: '2026-01-20T15:40:00.000Z',
   notes: null,
-  producer: { name: 'MARCIO MENEZES RIBEIRO', taxId: '098.736.418-90', city: 'Ituverava', state: 'SP' },
+  producer: {
+    name: 'MARCIO MENEZES RIBEIRO',
+    taxId: '098.736.418-90',
+    city: 'Ituverava',
+    state: 'SP',
+  },
   property: {
     name: 'FAZENDA SANTA TEREZINHA',
     registrationNumber: '20629',
@@ -19,7 +24,11 @@ const TEST_PROJECT: ProjectDocument = {
     totalAreaHectares: '1700.00',
   },
   season: { label: '2025/2026' },
-  agronomist: { name: 'Pedro Henrique dos Santos', licenseNumber: 'CREA 5063910430', issuingCity: 'Franca' },
+  agronomist: {
+    name: 'Pedro Henrique dos Santos',
+    licenseNumber: 'CREA 5063910430',
+    issuingCity: 'Franca',
+  },
   items: [
     {
       activityName: 'Cana de Açúcar',

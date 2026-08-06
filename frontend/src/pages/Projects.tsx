@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, FilePlus2, FileStack, Search } from 'lucide-react';
+import { ChevronLeft, ChevronRight, FilePlus2, FileStack, Landmark, Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
@@ -9,7 +9,14 @@ import { Card } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Input, Select } from '@/components/ui/Input';
 import { SkeletonTable } from '@/components/ui/Skeleton';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Table';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/Table';
 import { formatCurrency, formatDate } from '@/lib/format';
 import { PROJECT_STATUS_LABEL, PROJECT_STATUS_TONE } from '@/lib/projectStatus';
 import { agronomistsService } from '@/services/agronomists';
@@ -24,6 +31,7 @@ const PAGE_SIZE = 15;
 
 export function Projects() {
   const canCreate = useAuthStore((s) => s.hasRole('ADMIN', 'AGRONOMIST'));
+  const canInitiate = useAuthStore((s) => s.hasRole('BANK'));
 
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<ProjectStatus | ''>('');
@@ -62,7 +70,11 @@ export function Projects() {
   }
 
   useEffect(() => {
-    Promise.all([producersService.list({ pageSize: 100 }), seasonsService.list(), agronomistsService.list()])
+    Promise.all([
+      producersService.list({ pageSize: 100 }),
+      seasonsService.list(),
+      agronomistsService.list(),
+    ])
       .then(([producersResult, seasonsResult, agronomistsResult]) => {
         setProducers(producersResult.items);
         setSeasons(seasonsResult);
@@ -90,12 +102,23 @@ export function Projects() {
         title="Projetos"
         description="Todos os projetos emitidos — busque, filtre e reabra qualquer um."
         actions={
-          canCreate && (
-            <Link to="/projects/new" className={buttonVariants('primary', 'md')}>
-              <FilePlus2 className="h-4 w-4" />
-              Novo Projeto
-            </Link>
-          )
+          <>
+            {canInitiate && (
+              <Link
+                to="/projects/initiate"
+                className={buttonVariants(canCreate ? 'outline' : 'primary', 'md')}
+              >
+                <Landmark className="h-4 w-4" />
+                Abrir Projeto
+              </Link>
+            )}
+            {canCreate && (
+              <Link to="/projects/new" className={buttonVariants('primary', 'md')}>
+                <FilePlus2 className="h-4 w-4" />
+                Novo Projeto
+              </Link>
+            )}
+          </>
         }
       />
 
@@ -162,7 +185,11 @@ export function Projects() {
             <EmptyState
               icon={FileStack}
               title="Nenhum projeto encontrado"
-              description={hasFilters ? 'Ajuste a busca/filtros ou emita um novo projeto.' : 'Emita o primeiro projeto.'}
+              description={
+                hasFilters
+                  ? 'Ajuste a busca/filtros ou emita um novo projeto.'
+                  : 'Emita o primeiro projeto.'
+              }
             />
           </div>
         ) : (
@@ -194,12 +221,16 @@ export function Projects() {
                     <TableCell className="text-text-secondary">{project.property.name}</TableCell>
                     <TableCell className="text-text-secondary">{project.season.label}</TableCell>
                     <TableCell>
-                      <Badge tone={PROJECT_STATUS_TONE[project.status]}>{PROJECT_STATUS_LABEL[project.status]}</Badge>
+                      <Badge tone={PROJECT_STATUS_TONE[project.status]}>
+                        {PROJECT_STATUS_LABEL[project.status]}
+                      </Badge>
                     </TableCell>
                     <TableCell className="text-right font-mono font-medium tabular-nums">
                       {formatCurrency(project.totalRevenue)}
                     </TableCell>
-                    <TableCell className="text-text-secondary">{formatDate(project.createdAt)}</TableCell>
+                    <TableCell className="text-text-secondary">
+                      {formatDate(project.createdAt)}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -210,7 +241,12 @@ export function Projects() {
                 {total} projeto{total === 1 ? '' : 's'} · página {page} de {totalPages}
               </span>
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={page <= 1}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                >
                   <ChevronLeft className="h-3.5 w-3.5" />
                   Anterior
                 </Button>

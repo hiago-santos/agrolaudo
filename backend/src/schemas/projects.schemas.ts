@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { geoJsonPolygonSchema } from '../lib/geo.js';
+
 export const projectItemInputSchema = z.object({
   activityId: z.string().min(1),
   unit: z.string().optional(),
@@ -28,9 +30,25 @@ export const updateProjectBodySchema = z.object({
   issuingCity: z.string().min(1).optional(),
   notes: z.string().optional(),
   items: z.array(projectItemInputSchema).min(1).optional(),
+  financedAreaBoundary: geoJsonPolygonSchema.optional(),
+});
+
+/**
+ * "Casca" de projeto aberta pelo papel BANK — produtor/propriedade/safra/agrônomo já
+ * definidos e a área financiada já delimitada no mapa, mas sem atividades ainda (isso
+ * fica pro agrônomo completar depois via updateProjectBodySchema). Ver projects.service.ts.
+ */
+export const initiateProjectBodySchema = z.object({
+  producerId: z.string().min(1),
+  propertyId: z.string().min(1),
+  seasonId: z.string().min(1),
+  agronomistId: z.string().min(1),
+  financedAreaBoundary: geoJsonPolygonSchema,
+  notes: z.string().optional(),
 });
 
 export const projectStatusSchema = z.enum([
+  'BANK_INITIATED',
   'DRAFT',
   'PENDING_SIGNATURES',
   'SIGNED',

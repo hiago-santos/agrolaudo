@@ -23,7 +23,9 @@ export async function reviewProject(
 ) {
   const project = await getProject(prisma, id);
   if (project.status !== 'UNDER_BANK_REVIEW') {
-    throw new ConflictError('Só é possível decidir sobre projetos que estão em análise pelo banco.');
+    throw new ConflictError(
+      'Só é possível decidir sobre projetos que estão em análise pelo banco.',
+    );
   }
 
   return prisma.project.update({

@@ -35,14 +35,24 @@ export function NewProject() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Novo Projeto" description="Laudo de Capacidade Pagadora — 3 passos rápidos" />
+      <PageHeader
+        title="Novo Projeto"
+        description="Laudo de Capacidade Pagadora — 3 passos rápidos"
+      />
 
       <StepIndicator current={step} />
 
       <div key={step} className="animate-page-enter">
-        {step === 1 && <Step1ProducerSelection draft={draft} onChange={onChange} onNext={() => setStep(2)} />}
+        {step === 1 && (
+          <Step1ProducerSelection draft={draft} onChange={onChange} onNext={() => setStep(2)} />
+        )}
         {step === 2 && (
-          <Step2Activities draft={draft} onChange={onChange} onNext={() => setStep(3)} onBack={() => setStep(1)} />
+          <Step2Activities
+            draft={draft}
+            onChange={onChange}
+            onNext={() => setStep(3)}
+            onBack={() => setStep(1)}
+          />
         )}
         {step === 3 && <Step3Review draft={draft} onChange={onChange} onBack={() => setStep(2)} />}
       </div>
