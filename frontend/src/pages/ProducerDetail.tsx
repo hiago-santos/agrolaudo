@@ -1,7 +1,8 @@
-import { ArrowLeft, Crosshair, MapPin, Pencil, Plus, Sprout } from 'lucide-react';
+import { ArrowLeft, MapPin, Pencil, Plus, Sprout } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
+import { LocationMapField } from '@/components/map/LocationMapField';
 import { ProducerFormDialog } from '@/components/producers/ProducerFormDialog';
 import { PropertyFormDialog } from '@/components/properties/PropertyFormDialog';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -10,7 +11,7 @@ import { Button, buttonVariants } from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { SkeletonCards, SkeletonPageHeader, SkeletonText } from '@/components/ui/Skeleton';
-import { formatCoordinates, formatNumber } from '@/lib/format';
+import { formatNumber } from '@/lib/format';
 import { producersService } from '@/services/producers';
 import { useAuthStore } from '@/stores/auth';
 import { toast } from '@/stores/toast';
@@ -133,54 +134,15 @@ export function ProducerDetail() {
             />
           </div>
         ) : (
-          <div className="grid gap-3 p-5 sm:grid-cols-2">
+          <div className="grid gap-4 p-5 sm:grid-cols-2">
             {producer.properties.map((property) => (
-              <div
+              <PropertyCard
                 key={property.id}
-                className="rounded-lg border border-border p-4 transition-colors hover:border-accent/40 hover:bg-bg-subtle/40"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <p className="text-sm font-medium text-text">{property.name}</p>
-                    <p className="text-xs text-text-secondary">
-                      Matrícula {property.registrationNumber} · {property.city}-{property.state}
-                    </p>
-                  </div>
-                  {canEdit && (
-                    <button
-                      type="button"
-                      onClick={() => setEditingProperty(property)}
-                      className="shrink-0 rounded-md p-1 text-text-tertiary transition-colors hover:bg-bg-subtle hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring"
-                      aria-label={`Editar ${property.name}`}
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                    </button>
-                  )}
-                </div>
-                <p className="mt-2 text-xs text-text-secondary">
-                  Área total: {formatNumber(property.totalAreaHectares)} ha
-                  {property.boundaryAreaHectares &&
-                    ` · demarcada: ${formatNumber(property.boundaryAreaHectares)} ha`}
-                </p>
-                {property.latitude && property.longitude ? (
-                  <p className="mt-1 flex items-center gap-1 font-mono text-[11px] text-text-tertiary">
-                    <Crosshair className="h-3 w-3 shrink-0" />
-                    {formatCoordinates(property.latitude, property.longitude)}
-                  </p>
-                ) : (
-                  <p className="mt-1 flex items-center gap-1 text-[11px] text-text-tertiary">
-                    <MapPin className="h-3 w-3 shrink-0" />
-                    Sem demarcação no mapa
-                  </p>
-                )}
-                <Link
-                  to={`/projects/new?producerId=${producer.id}&propertyId=${property.id}`}
-                  className={buttonVariants('outline', 'sm') + ' mt-3 w-full'}
-                >
-                  <Sprout className="h-3.5 w-3.5" />
-                  Emitir projeto
-                </Link>
-              </div>
+                producerId={producer.id}
+                property={property}
+                canEdit={canEdit}
+                onEdit={() => setEditingProperty(property)}
+              />
             ))}
           </div>
         )}
@@ -207,6 +169,71 @@ export function ProducerDetail() {
         property={editingProperty}
         onSaved={() => void load()}
       />
+    </div>
+  );
+}
+
+interface PropertyCardProps {
+  producerId: string;
+  property: Property;
+  canEdit: boolean;
+  onEdit: () => void;
+}
+
+/** Card híbrido: dados da matrícula no topo, prévia estática do mapa embaixo. */
+function PropertyCard({ producerId, property, canEdit, onEdit }: PropertyCardProps) {
+  const point =
+    property.latitude && property.longitude
+      ? { lat: Number(property.latitude), lng: Number(property.longitude) }
+      : null;
+  const hasLocation = !!property.boundary || !!point;
+
+  return (
+    <div className="overflow-hidden rounded-lg border border-border transition-colors hover:border-accent/40">
+      <div className="p-4">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <p className="truncate text-sm font-medium text-text">{property.name}</p>
+            <p className="text-xs text-text-secondary">
+              Matrícula {property.registrationNumber} · {property.city}-{property.state}
+            </p>
+          </div>
+          {canEdit && (
+            <button
+              type="button"
+              onClick={onEdit}
+              className="shrink-0 rounded-md p-1 text-text-tertiary transition-colors hover:bg-bg-subtle hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring"
+              aria-label={`Editar ${property.name}`}
+            >
+              <Pencil className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+        <p className="mt-2 text-xs text-text-secondary">
+          Área total: {formatNumber(property.totalAreaHectares)} ha
+          {property.boundaryAreaHectares &&
+            ` · demarcada: ${formatNumber(property.boundaryAreaHectares)} ha`}
+        </p>
+      </div>
+
+      {hasLocation ? (
+        <LocationMapField boundary={property.boundary} point={point} height={140} compact />
+      ) : (
+        <div className="flex h-[140px] items-center justify-center gap-1.5 border-t border-border bg-bg-subtle text-xs text-text-tertiary">
+          <MapPin className="h-3.5 w-3.5" />
+          Sem localização cadastrada
+        </div>
+      )}
+
+      <div className="p-4 pt-3">
+        <Link
+          to={`/projects/new?producerId=${producerId}&propertyId=${property.id}`}
+          className={buttonVariants('outline', 'sm') + ' w-full'}
+        >
+          <Sprout className="h-3.5 w-3.5" />
+          Emitir projeto
+        </Link>
+      </div>
     </div>
   );
 }

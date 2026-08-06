@@ -68,6 +68,12 @@ export interface LocationMapFieldProps {
   center?: LatLng | null;
   /** Número (px) ou qualquer valor CSS — use '100%' pra preencher um container flex. */
   height?: number | string;
+  /**
+   * Miniatura estática pra card/lista — sem barra de ferramentas, sem legenda embaixo,
+   * sem zoom/pan/fullscreen. Só o mapa como visual, pra uma listagem com várias
+   * propriedades não carregar N mapas totalmente interativos.
+   */
+  compact?: boolean;
   className?: string;
 }
 
@@ -112,6 +118,7 @@ function MapField({
   height,
   referenceBoundary,
   referenceLabel,
+  compact = false,
   className,
 }: LocationMapFieldProps) {
   const editable = !!onBoundaryChange;
@@ -142,7 +149,9 @@ function MapField({
   const currentPolygon = useMemo(() => pathToPolygon(path), [path]);
   const areaHectares = currentPolygon ? polygonAreaHectares(currentPolygon) : null;
   const centroidPoint = currentPolygon ? polygonCentroid(currentPolygon) : null;
-  const displayedPoint = pointEditable ? (point ?? null) : centroidPoint;
+  // `point` explícito (mesmo só pra leitura, sem onPointChange) sempre vence — é o que
+  // permite mostrar um pino salvo pra uma propriedade que ainda não tem polígono desenhado.
+  const displayedPoint = point !== undefined ? point : centroidPoint;
 
   useEffect(() => {
     if (boundary === emittedBoundary.current) return;
@@ -288,8 +297,13 @@ function MapField({
   const initialZoom = center || path.length > 0 || referencePath.length > 0 ? 14 : 4;
 
   return (
-    <div className={cn('space-y-2', className)}>
-      <div className="overflow-hidden rounded-lg border border-border">
+    <div className={cn(!compact && 'space-y-2', className)}>
+      <div
+        className={cn(
+          'overflow-hidden',
+          compact ? 'border-t border-border' : 'rounded-lg border border-border',
+        )}
+      >
         {editable && (
           <div className="flex flex-wrap items-center gap-2 border-b border-border bg-bg-subtle px-3 py-2">
             <div className="relative min-w-[12rem] flex-1">
@@ -357,10 +371,12 @@ function MapField({
             defaultCenter={initialCenter}
             defaultZoom={initialZoom}
             mapTypeId="hybrid"
-            gestureHandling="greedy"
+            gestureHandling={compact ? 'none' : 'greedy'}
             streetViewControl={false}
-            fullscreenControl
-            mapTypeControl
+            fullscreenControl={!compact}
+            mapTypeControl={!compact}
+            zoomControl={!compact}
+            keyboardShortcuts={!compact}
             clickableIcons={false}
             draggableCursor={editable && drawing ? 'crosshair' : undefined}
             onTilesLoaded={(event: MapEvent) => setMap(event.map)}
@@ -415,106 +431,110 @@ function MapField({
         </div>
       </div>
 
-      {searchError && <p className="text-xs text-danger">{searchError}</p>}
+      {!compact && (
+        <>
+          {searchError && <p className="text-xs text-danger">{searchError}</p>}
 
-      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2 text-xs text-text-secondary">
-        <div className="min-w-0 space-y-0.5">
-          {areaHectares !== null ? (
-            <p>
-              <span className="font-medium text-text">{formatNumber(areaHectares)} ha</span> ·{' '}
-              {path.length} vértices
-            </p>
-          ) : (
-            <p>
-              {editable
-                ? drawing
-                  ? 'Clique no mapa para marcar os vértices (mínimo 3).'
-                  : 'Ligue o modo desenho para marcar a área.'
-                : 'Nenhuma área demarcada.'}
-            </p>
-          )}
+          <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2 text-xs text-text-secondary">
+            <div className="min-w-0 space-y-0.5">
+              {areaHectares !== null ? (
+                <p>
+                  <span className="font-medium text-text">{formatNumber(areaHectares)} ha</span> ·{' '}
+                  {path.length} vértices
+                </p>
+              ) : (
+                <p>
+                  {editable
+                    ? drawing
+                      ? 'Clique no mapa para marcar os vértices (mínimo 3).'
+                      : 'Ligue o modo desenho para marcar a área.'
+                    : 'Nenhuma área demarcada.'}
+                </p>
+              )}
 
-          {displayedPoint && (
-            <p className="flex items-center gap-1.5 font-mono text-[11px] text-text-tertiary">
-              <Crosshair className="h-3 w-3 shrink-0" style={{ color: drawnColor }} />
-              {formatCoordinates(displayedPoint.lat, displayedPoint.lng)}
-            </p>
-          )}
+              {displayedPoint && (
+                <p className="flex items-center gap-1.5 font-mono text-[11px] text-text-tertiary">
+                  <Crosshair className="h-3 w-3 shrink-0" style={{ color: drawnColor }} />
+                  {formatCoordinates(displayedPoint.lat, displayedPoint.lng)}
+                </p>
+              )}
 
-          {referenceLabel && referencePath.length >= 3 && (
-            <p className="flex items-center gap-1.5 text-[11px] text-text-tertiary">
-              <span
-                aria-hidden
-                className="inline-block h-2 w-3 shrink-0 rounded-sm border"
-                style={{ borderColor: referenceColor }}
-              />
-              {referenceLabel}
-            </p>
-          )}
+              {referenceLabel && referencePath.length >= 3 && (
+                <p className="flex items-center gap-1.5 text-[11px] text-text-tertiary">
+                  <span
+                    aria-hidden
+                    className="inline-block h-2 w-3 shrink-0 rounded-sm border"
+                    style={{ borderColor: referenceColor }}
+                  />
+                  {referenceLabel}
+                </p>
+              )}
 
-          {editable && hasShape && (
-            <p className="text-[11px] text-text-tertiary">
-              Arraste as alças para ajustar · clique direito num vértice para removê-lo.
-            </p>
-          )}
-        </div>
+              {editable && hasShape && (
+                <p className="text-[11px] text-text-tertiary">
+                  Arraste as alças para ajustar · clique direito num vértice para removê-lo.
+                </p>
+              )}
+            </div>
 
-        {editable && path.length > 0 && (
-          <div className="flex shrink-0 gap-1.5">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => commitBoundary(path.slice(0, -1))}
-            >
-              <Undo2 className="h-3.5 w-3.5" />
-              Desfazer ponto
-            </Button>
-            <Button type="button" variant="ghost" size="sm" onClick={() => commitBoundary([])}>
-              <Trash2 className="h-3.5 w-3.5" />
-              Limpar
-            </Button>
+            {editable && path.length > 0 && (
+              <div className="flex shrink-0 gap-1.5">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => commitBoundary(path.slice(0, -1))}
+                >
+                  <Undo2 className="h-3.5 w-3.5" />
+                  Desfazer ponto
+                </Button>
+                <Button type="button" variant="ghost" size="sm" onClick={() => commitBoundary([])}>
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Limpar
+                </Button>
+              </div>
+            )}
           </div>
-        )}
-      </div>
 
-      {pointEditable && (
-        <div className="grid grid-cols-2 gap-3 rounded-lg border border-border bg-bg-subtle/60 p-3">
-          <div>
-            <Label htmlFor={`${inputId}-lat`}>Latitude</Label>
-            <Input
-              id={`${inputId}-lat`}
-              type="number"
-              step="0.000001"
-              value={latInput}
-              onChange={(event) => handlePointInput(event.target.value, lngInput)}
-              placeholder="-20.540000"
-            />
-          </div>
-          <div>
-            <Label htmlFor={`${inputId}-lng`}>Longitude</Label>
-            <Input
-              id={`${inputId}-lng`}
-              type="number"
-              step="0.000001"
-              value={lngInput}
-              onChange={(event) => handlePointInput(latInput, event.target.value)}
-              placeholder="-47.385000"
-            />
-          </div>
-          {centroidPoint && (
-            <p className="col-span-2 text-[11px] text-text-tertiary">
-              Centro do desenho: {formatCoordinates(centroidPoint.lat, centroidPoint.lng)} ·{' '}
-              <button
-                type="button"
-                onClick={useDrawnCentroid}
-                className="rounded-sm font-medium text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring"
-              >
-                usar
-              </button>
-            </p>
+          {pointEditable && (
+            <div className="grid grid-cols-2 gap-3 rounded-lg border border-border bg-bg-subtle/60 p-3">
+              <div>
+                <Label htmlFor={`${inputId}-lat`}>Latitude</Label>
+                <Input
+                  id={`${inputId}-lat`}
+                  type="number"
+                  step="0.000001"
+                  value={latInput}
+                  onChange={(event) => handlePointInput(event.target.value, lngInput)}
+                  placeholder="-20.540000"
+                />
+              </div>
+              <div>
+                <Label htmlFor={`${inputId}-lng`}>Longitude</Label>
+                <Input
+                  id={`${inputId}-lng`}
+                  type="number"
+                  step="0.000001"
+                  value={lngInput}
+                  onChange={(event) => handlePointInput(latInput, event.target.value)}
+                  placeholder="-47.385000"
+                />
+              </div>
+              {centroidPoint && (
+                <p className="col-span-2 text-[11px] text-text-tertiary">
+                  Centro do desenho: {formatCoordinates(centroidPoint.lat, centroidPoint.lng)} ·{' '}
+                  <button
+                    type="button"
+                    onClick={useDrawnCentroid}
+                    className="rounded-sm font-medium text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring"
+                  >
+                    usar
+                  </button>
+                </p>
+              )}
+            </div>
           )}
-        </div>
+        </>
       )}
     </div>
   );
