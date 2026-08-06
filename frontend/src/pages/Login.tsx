@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Bank, Plant, UserGear } from '@phosphor-icons/react';
+import { Bank, Plant } from '@phosphor-icons/react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/Button';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { FieldError, Input, Label } from '@/components/ui/Input';
 import { Seal } from '@/components/ui/Seal';
+import { Spinner } from '@/components/ui/Spinner';
 import { useAuthStore } from '@/stores/auth';
 import type { UserRole } from '@/types/domain';
 
@@ -30,17 +31,10 @@ interface QuickLoginEntry {
   label: string;
   email: string;
   password: string;
-  icon: typeof UserGear;
+  icon: typeof Plant;
 }
 
 const QUICK_LOGIN: QuickLoginEntry[] = [
-  {
-    role: 'ADMIN',
-    label: 'Administrador',
-    email: 'admin@admin.local',
-    password: 'admin123',
-    icon: UserGear,
-  },
   {
     role: 'AGRONOMIST',
     label: 'Engenheiro Agrônomo',
@@ -119,36 +113,50 @@ export function Login() {
 
       <div className="relative w-full max-w-sm animate-page-enter">
         <div className="mb-8 flex flex-col items-center text-center">
-          <Seal size="lg" />
-          <h1 className="mt-5 font-display text-3xl font-semibold tracking-tight text-text sm:text-4xl">
-            AgroLaudo
-          </h1>
-          <p className="mt-2.5 max-w-xs text-sm text-text-secondary">
-            Laudos de Capacidade Pagadora para produtores rurais
-          </p>
+          <div className="flex items-center gap-3">
+            <Seal size="md" />
+            <div className="text-left">
+              <h1 className="font-display text-2xl font-semibold leading-none tracking-tight text-text sm:text-3xl">
+                AgroLaudo
+              </h1>
+              <p className="mt-1.5 text-[10px] font-medium uppercase tracking-[0.14em] text-text-tertiary">
+                Capacidade Pagadora
+              </p>
+            </div>
+          </div>
         </div>
 
         <div className="mb-4 space-y-2 rounded-lg border border-gold/40 bg-gold-soft p-4">
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-gold">
-            Prévia — entrar sem senha
-          </p>
-          <div className="grid grid-cols-3 gap-2">
-            {QUICK_LOGIN.map((entry) => (
-              <Button
-                key={entry.role}
-                type="button"
-                variant="outline"
-                size="sm"
-                className="h-auto flex-col gap-1 py-2.5 text-[11px]"
-                loading={quickLoginRole === entry.role}
-                disabled={loading}
-                onClick={() => void quickLogin(entry)}
-              >
-                <entry.icon className="h-4 w-4" />
-                {entry.label}
-              </Button>
-            ))}
-          </div>
+          {quickLoginRole ? (
+            <div className="flex min-h-[4.5rem] flex-col items-center justify-center gap-2 py-1">
+              <Spinner className="h-5 w-5 text-gold" />
+              <p className="text-xs text-text-secondary">
+                Entrando como {QUICK_LOGIN.find((e) => e.role === quickLoginRole)?.label}…
+              </p>
+            </div>
+          ) : (
+            <>
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-gold">
+                Prévia — entrar sem senha
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                {QUICK_LOGIN.map((entry) => (
+                  <Button
+                    key={entry.role}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-auto flex-col gap-1 py-2.5 text-[11px]"
+                    disabled={loading}
+                    onClick={() => void quickLogin(entry)}
+                  >
+                    <entry.icon className="h-4 w-4" />
+                    {entry.label}
+                  </Button>
+                ))}
+              </div>
+            </>
+          )}
         </div>
 
         <form
