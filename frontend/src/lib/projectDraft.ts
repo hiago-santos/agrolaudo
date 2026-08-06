@@ -27,5 +27,8 @@ export function draftToProjectInput(draft: ProjectDraft): ProjectInput {
     issuingCity: draft.issuingCity || undefined,
     notes: draft.notes || undefined,
     items,
+    ...(draft.financedAreaBoundary
+      ? { financedAreaBoundary: draft.financedAreaBoundary }
+      : {}),
   };
 }

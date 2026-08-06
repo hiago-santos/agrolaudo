@@ -19,7 +19,7 @@ export interface ProjectDraft {
   issuingCity: string;
   notes: string;
   items: Record<string, ItemDraft>;
-  /** Só usado no fluxo de abertura pelo banco (ver NewBankProject/StepFinancedArea). */
+  /** Área delimitada no mapa como base do projeto (opcional). */
   financedAreaBoundary: GeoPolygon | null;
 }
 

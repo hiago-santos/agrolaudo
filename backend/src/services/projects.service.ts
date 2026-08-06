@@ -29,6 +29,7 @@ export interface CreateProjectInput {
   issuingCity?: string;
   notes?: string;
   items: ProjectItemInput[];
+  financedAreaBoundary?: GeoJsonPolygon;
 }
 
 export interface UpdateProjectInput {
@@ -159,6 +160,9 @@ export async function createProject(prisma: PrismaClient, input: CreateProjectIn
 
   const calculatedItems = await calculateProjectItems(prisma, input.items);
   const consolidated = consolidate(calculatedItems.map((item) => item.result));
+  const financedAreaHectares = input.financedAreaBoundary
+    ? polygonAreaHectares(input.financedAreaBoundary)
+    : undefined;
 
   return prisma.$transaction(async (tx) => {
     const year = new Date().getFullYear();
@@ -174,6 +178,8 @@ export async function createProject(prisma: PrismaClient, input: CreateProjectIn
         status: 'DRAFT',
         issuingCity: input.issuingCity ?? agronomist.issuingCity,
         notes: input.notes,
+        financedAreaBoundary: input.financedAreaBoundary,
+        financedAreaHectares,
         totalRevenue: consolidated.totalRevenue,
         totalCost: consolidated.totalCost,
         totalProfit: consolidated.totalProfit,

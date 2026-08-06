@@ -1,12 +1,5 @@
 import { api, apiDownload, downloadBlob } from '@/lib/api';
-import type {
-  GeoPolygon,
-  Project,
-  ProjectCalculationResult,
-  ProjectStatus,
-  ProjectSummary,
-  Paginated,
-} from '@/types/domain';
+import type { GeoPolygon, Project, ProjectCalculationResult, ProjectStatus, ProjectSummary, Paginated } from '@/types/domain';
 
 export interface ProjectItemInput {
   activityId: string;
@@ -26,6 +19,7 @@ export interface ProjectInput {
   issuingCity?: string;
   notes?: string;
   items: ProjectItemInput[];
+  financedAreaBoundary?: GeoPolygon;
 }
 
 export interface InitiateProjectInput {

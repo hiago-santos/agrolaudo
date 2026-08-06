@@ -15,7 +15,8 @@ import {
   TableRow,
 } from '@/components/ui/Table';
 import { ApiError } from '@/lib/api';
-import { formatCurrency, formatPercentage } from '@/lib/format';
+import { formatCurrency, formatNumber, formatPercentage } from '@/lib/format';
+import { polygonAreaHectares } from '@/lib/geo';
 import { unitLabel } from '@/lib/units';
 import { draftToProjectInput } from '@/lib/projectDraft';
 import { projectsService, type ProjectItemInput } from '@/services/projects';
@@ -120,6 +121,14 @@ export function Step3Review({ draft, onChange, onBack, projectId, mode = 'comple
             <SummaryLine label="Produtor" value={draft.producer?.name ?? '—'} />
             <SummaryLine label="Propriedade" value={draft.property?.name ?? '—'} />
             <SummaryLine label="Safra" value={draft.season?.label ?? '—'} />
+            <SummaryLine
+              label="Área do projeto"
+              value={
+                draft.financedAreaBoundary
+                  ? `${formatNumber(polygonAreaHectares(draft.financedAreaBoundary))} ha delimitados`
+                  : 'Propriedade inteira'
+              }
+            />
             <SummaryLine label="Cidade de emissão" value={draft.issuingCity || '—'} />
           </div>
         </Card>

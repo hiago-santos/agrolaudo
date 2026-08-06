@@ -1,7 +1,9 @@
 import { Check, MapPin, Plus, Search, UserCheck } from 'lucide-react';
+import { MapTrifold } from '@phosphor-icons/react';
 import { useEffect, useRef, useState } from 'react';
 
 import { ProducerFormDialog } from '@/components/producers/ProducerFormDialog';
+import { ProjectAreaSelector } from '@/components/project/ProjectAreaSelector';
 import { PropertyFormDialog } from '@/components/properties/PropertyFormDialog';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -11,9 +13,11 @@ import { agronomistsService } from '@/services/agronomists';
 import { producersService } from '@/services/producers';
 import { seasonsService } from '@/services/seasons';
 import { useAuthStore } from '@/stores/auth';
-import type { Agronomist, Producer, Season } from '@/types/domain';
+import type { Agronomist, Producer, Property, Season } from '@/types/domain';
 import type { ProjectDraft } from '@/types/projectDraft';
 import { cn } from '@/lib/cn';
+import { formatNumber } from '@/lib/format';
+import { polygonAreaHectares } from '@/lib/geo';
 
 interface Step1Props {
   draft: ProjectDraft;
@@ -37,6 +41,7 @@ export function Step1ProducerSelection({ draft, onChange, onNext, nextLabel }: S
   const [agronomists, setAgronomists] = useState<Agronomist[]>([]);
   const [newProducerOpen, setNewProducerOpen] = useState(false);
   const [newPropertyOpen, setNewPropertyOpen] = useState(false);
+  const [areaMapOpen, setAreaMapOpen] = useState(false);
   const [highlighted, setHighlighted] = useState(0);
   const listboxId = 'producer-search-results';
   const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
@@ -92,10 +97,17 @@ export function Step1ProducerSelection({ draft, onChange, onNext, nextLabel }: S
     onChange({
       producer,
       property: producer.properties.length === 1 ? producer.properties[0] : null,
+      financedAreaBoundary: null,
     });
+    setAreaMapOpen(false);
     setSearch('');
     setResults([]);
     setListOpen(false);
+  }
+
+  function selectProperty(property: Property) {
+    onChange({ property, financedAreaBoundary: null });
+    setAreaMapOpen(false);
   }
 
   function onSearchKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
@@ -145,7 +157,10 @@ export function Step1ProducerSelection({ draft, onChange, onNext, nextLabel }: S
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => onChange({ producer: null, property: null })}
+              onClick={() => {
+                onChange({ producer: null, property: null, financedAreaBoundary: null });
+                setAreaMapOpen(false);
+              }}
             >
               Trocar
             </Button>
@@ -246,7 +261,7 @@ export function Step1ProducerSelection({ draft, onChange, onNext, nextLabel }: S
               <button
                 key={property.id}
                 type="button"
-                onClick={() => onChange({ property })}
+                onClick={() => selectProperty(property)}
                 className={cn(
                   'flex w-full items-center justify-between rounded-lg border px-4 py-3 text-left transition-colors',
                   draft.property?.id === property.id
@@ -277,6 +292,65 @@ export function Step1ProducerSelection({ draft, onChange, onNext, nextLabel }: S
             </Button>
           </div>
         </Card>
+      )}
+
+      {draft.property && !areaMapOpen && !draft.financedAreaBoundary && (
+        <Card className="p-5">
+          <p className="mb-3 text-xs text-text-secondary">
+            Por padrão o projeto usa a propriedade inteira. Se quiser limitar a uma parte da
+            fazenda, delimite no mapa.
+          </p>
+          <Button type="button" variant="outline" onClick={() => setAreaMapOpen(true)}>
+            <MapTrifold className="h-3.5 w-3.5" />
+            Selecionar parte da fazenda
+          </Button>
+        </Card>
+      )}
+
+      {draft.property && draft.financedAreaBoundary && !areaMapOpen && (
+        <Card className="flex flex-wrap items-center justify-between gap-3 border border-accent/30 bg-accent-soft p-4">
+          <div>
+            <p className="text-sm font-medium text-text">Área delimitada no mapa</p>
+            <p className="text-xs text-text-secondary">
+              {formatNumber(polygonAreaHectares(draft.financedAreaBoundary))} ha selecionados em{' '}
+              {draft.property.name}
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button type="button" variant="outline" size="sm" onClick={() => setAreaMapOpen(true)}>
+              Alterar área
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => onChange({ financedAreaBoundary: null })}
+            >
+              Remover
+            </Button>
+          </div>
+        </Card>
+      )}
+
+      {draft.property && areaMapOpen && (
+        <ProjectAreaSelector
+          property={draft.property}
+          boundary={draft.financedAreaBoundary}
+          onBoundaryChange={(financedAreaBoundary) => onChange({ financedAreaBoundary })}
+          onClose={() => setAreaMapOpen(false)}
+          onPropertyLoaded={(loaded) => {
+            if (!draft.producer) return;
+            onChange({
+              property: loaded,
+              producer: {
+                ...draft.producer,
+                properties: draft.producer.properties.map((item) =>
+                  item.id === loaded.id ? loaded : item,
+                ),
+              },
+            });
+          }}
+        />
       )}
 
       <Card className="grid gap-4 p-5 sm:grid-cols-2">
@@ -331,12 +405,14 @@ export function Step1ProducerSelection({ draft, onChange, onNext, nextLabel }: S
               open={newPropertyOpen}
               onClose={() => setNewPropertyOpen(false)}
               producerId={producer.id}
-              onSaved={(property) =>
+              onSaved={(property) => {
                 onChange({
                   producer: { ...producer, properties: [...producer.properties, property] },
                   property,
-                })
-              }
+                  financedAreaBoundary: null,
+                });
+                setAreaMapOpen(false);
+              }}
             />
           );
         })()}

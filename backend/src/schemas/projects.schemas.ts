@@ -24,6 +24,7 @@ export const createProjectBodySchema = z.object({
   issuingCity: z.string().min(1).optional(),
   notes: z.string().optional(),
   items: z.array(projectItemInputSchema).min(1, 'Adicione ao menos uma atividade.'),
+  financedAreaBoundary: geoJsonPolygonSchema.optional(),
 });
 
 export const updateProjectBodySchema = z.object({

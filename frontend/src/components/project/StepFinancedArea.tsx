@@ -1,14 +1,12 @@
 import { Bank } from '@phosphor-icons/react';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { LocationMapField } from '@/components/map/LocationMapField';
+import { ProjectAreaSelector } from '@/components/project/ProjectAreaSelector';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Label, Textarea } from '@/components/ui/Input';
 import { ApiError } from '@/lib/api';
-import { formatNumber } from '@/lib/format';
-import { polygonAreaHectares } from '@/lib/geo';
 import { projectsService } from '@/services/projects';
 import { toast } from '@/stores/toast';
 import type { ProjectDraft } from '@/types/projectDraft';
@@ -21,8 +19,7 @@ interface StepFinancedAreaProps {
 
 /**
  * Último passo do fluxo restrito do banco: desenhar, dentro da propriedade escolhida, a
- * área que está sendo pleiteada pro financiamento. O contorno da propriedade (se já
- * cadastrado) aparece como referência. Sem atividades — quem completa isso é o agrônomo.
+ * área que está sendo pleiteada pro financiamento. Sem atividades — quem completa isso é o agrônomo.
  */
 export function StepFinancedArea({ draft, onChange, onBack }: StepFinancedAreaProps) {
   const navigate = useNavigate();
@@ -67,49 +64,22 @@ export function StepFinancedArea({ draft, onChange, onBack }: StepFinancedAreaPr
     }
   }
 
-  const center =
-    property?.latitude && property?.longitude
-      ? { lat: Number(property.latitude), lng: Number(property.longitude) }
-      : null;
-
-  const financedHectares = useMemo(
-    () => (draft.financedAreaBoundary ? polygonAreaHectares(draft.financedAreaBoundary) : null),
-    [draft.financedAreaBoundary],
-  );
-  const totalHectares = property ? Number(property.totalAreaHectares) : 0;
-  const financedShare =
-    financedHectares !== null && totalHectares > 0
-      ? (financedHectares / totalHectares) * 100
-      : null;
+  if (!property) return null;
 
   return (
     <div className="space-y-6">
-      <Card className="space-y-3 p-5">
-        <div className="flex items-center gap-2">
-          <Bank className="h-4 w-4 text-accent" />
-          <p className="text-sm font-semibold text-text">Área financiada</p>
-        </div>
-        <p className="text-xs text-text-secondary">
-          Desenhe no mapa o pedaço de {property?.name ?? 'propriedade'} que está sendo pleiteado pro
-          financiamento. O agrônomo responsável poderá ajustar essa área ao completar o projeto.
-        </p>
-        <LocationMapField
-          boundary={draft.financedAreaBoundary}
-          onBoundaryChange={(boundary) => onChange({ financedAreaBoundary: boundary })}
-          center={center}
-          referenceBoundary={property?.boundary ?? null}
-          referenceLabel="Contorno da propriedade"
-          height="clamp(320px, 58vh, 620px)"
-        />
+      <div className="flex items-center gap-2 px-1">
+        <Bank className="h-4 w-4 text-accent" />
+        <p className="text-sm font-semibold text-text">Área financiada</p>
+      </div>
 
-        {financedHectares !== null && (
-          <p className="rounded-md border border-accent/30 bg-accent-soft px-3 py-2 text-xs text-text">
-            Financiando <span className="font-semibold">{formatNumber(financedHectares)} ha</span>{' '}
-            de {formatNumber(totalHectares)} ha da propriedade
-            {financedShare !== null && ` — ${formatNumber(financedShare)}% da área total`}.
-          </p>
-        )}
-      </Card>
+      <ProjectAreaSelector
+        property={property}
+        boundary={draft.financedAreaBoundary}
+        onBoundaryChange={(financedAreaBoundary) => onChange({ financedAreaBoundary })}
+        title="Área financiada"
+        description={`Desenhe no mapa o pedaço de ${property.name} que está sendo pleiteado pro financiamento. O agrônomo responsável poderá ajustar essa área ao completar o projeto.`}
+      />
 
       <Card className="p-5">
         <Label htmlFor="notes">Observações (opcional)</Label>
