@@ -19,7 +19,7 @@ export function Card({ className, accent, ...props }: CardProps) {
   return (
     <div
       className={cn(
-        'rounded-lg border border-border bg-surface',
+        'rounded-lg border border-border bg-surface shadow-[0_1px_3px_rgba(34,31,23,0.05)]',
         accent &&
           cn(
             'relative overflow-hidden pl-4 before:absolute before:inset-y-0 before:left-0 before:w-[3px]',

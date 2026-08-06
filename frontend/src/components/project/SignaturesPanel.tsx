@@ -107,7 +107,7 @@ function SignatureBlock({
   }
 
   return (
-    <Card className="space-y-3 p-5">
+    <Card className="flex h-full flex-col gap-3 p-5">
       <div>
         <p className="text-xs font-semibold uppercase tracking-wide text-text-tertiary">
           {TYPE_LABEL[type]}
@@ -117,7 +117,7 @@ function SignatureBlock({
       </div>
 
       {alreadySigned ? (
-        <div className="flex items-center gap-2 rounded-lg border border-success/30 bg-success-soft px-3 py-2 text-xs text-success">
+        <div className="flex flex-1 items-center gap-2 rounded-lg border border-success/30 bg-success-soft px-3 py-2 text-xs text-success">
           <Check className="h-4 w-4 shrink-0" />
           <span>
             Assinado em {formatDateTime(signature?.signedAt)}
@@ -161,7 +161,9 @@ function SignatureBlock({
           )}
         </div>
       ) : (
-        <p className="text-xs text-text-tertiary">Aguardando assinatura.</p>
+        <p className="flex flex-1 items-center text-xs text-text-tertiary">
+          Aguardando assinatura.
+        </p>
       )}
     </Card>
   );

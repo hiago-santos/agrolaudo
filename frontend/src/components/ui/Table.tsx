@@ -34,7 +34,7 @@ export function TableHead({ className, ...props }: ThHTMLAttributes<HTMLTableCel
   return (
     <th
       className={cn(
-        'px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-widest text-text-tertiary',
+        'whitespace-nowrap px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-widest text-text-tertiary',
         className,
       )}
       {...props}
@@ -43,13 +43,16 @@ export function TableHead({ className, ...props }: ThHTMLAttributes<HTMLTableCel
 }
 
 export function TableCell({ className, ...props }: TdHTMLAttributes<HTMLTableCellElement>) {
-  return <td className={cn('px-4 py-3 text-text', className)} {...props} />;
+  return <td className={cn('whitespace-nowrap px-4 py-3 text-text', className)} {...props} />;
 }
 
 export function TableCellNumeric({ className, ...props }: TdHTMLAttributes<HTMLTableCellElement>) {
   return (
     <td
-      className={cn('px-4 py-3 font-mono text-sm tabular-nums text-text', className)}
+      className={cn(
+        'whitespace-nowrap px-4 py-3 font-mono text-sm tabular-nums text-text',
+        className,
+      )}
       {...props}
     />
   );

@@ -14,8 +14,6 @@ import { dashboardService } from '@/services/dashboard';
 import { toast } from '@/stores/toast';
 import type { DashboardSummary } from '@/types/domain';
 
-const KPI_ACCENTS = ['accent', 'gold', 'warning', 'accent', 'gold'] as const;
-
 export function Dashboard() {
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -40,7 +38,10 @@ export function Dashboard() {
     return (
       <div className="space-y-8">
         <SkeletonPageHeader />
-        <SkeletonCards count={5} className="sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5" />
+        <div className="space-y-3">
+          <SkeletonCards count={1} />
+          <SkeletonCards count={4} className="grid-cols-2 lg:grid-cols-4" />
+        </div>
         <Card>
           <SkeletonList rows={5} />
         </Card>
@@ -49,12 +50,27 @@ export function Dashboard() {
   }
   if (!summary) return null;
 
-  const kpis = [
-    { label: 'Projetos no mês', value: String(summary.projectsThisMonth) },
-    { label: 'Aguardando assinatura', value: String(summary.pendingSignaturesCount) },
-    { label: 'Em análise no banco', value: String(summary.underBankReviewCount) },
-    { label: 'Produtores cadastrados', value: String(summary.activeProducersCount) },
-    { label: 'Faturamento no mês', value: formatCurrency(summary.revenueThisMonth) },
+  const secondaryKpis = [
+    {
+      label: 'Projetos no mês',
+      value: String(summary.projectsThisMonth),
+      accent: 'neutral' as const,
+    },
+    {
+      label: 'Aguardando assinatura',
+      value: String(summary.pendingSignaturesCount),
+      accent: 'warning' as const,
+    },
+    {
+      label: 'Em análise no banco',
+      value: String(summary.underBankReviewCount),
+      accent: 'gold' as const,
+    },
+    {
+      label: 'Produtores cadastrados',
+      value: String(summary.activeProducersCount),
+      accent: 'neutral' as const,
+    },
   ];
 
   return (
@@ -70,19 +86,32 @@ export function Dashboard() {
         }
       />
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-        {kpis.map((kpi, index) => (
-          <Card key={kpi.label} accent={KPI_ACCENTS[index] ?? 'neutral'}>
-            <CardContent className="p-4">
-              <p className="text-[11px] font-semibold uppercase tracking-widest text-text-tertiary">
-                {kpi.label}
-              </p>
-              <p className="mt-2 font-mono text-2xl font-medium tabular-nums tracking-tight text-text">
-                {kpi.value}
-              </p>
-            </CardContent>
-          </Card>
-        ))}
+      <div className="space-y-3">
+        <Card accent="accent">
+          <CardContent className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 p-5">
+            <p className="text-[11px] font-semibold uppercase tracking-widest text-text-tertiary">
+              Faturamento no mês
+            </p>
+            <p className="font-mono text-3xl font-medium tabular-nums tracking-tight text-text">
+              {formatCurrency(summary.revenueThisMonth)}
+            </p>
+          </CardContent>
+        </Card>
+
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {secondaryKpis.map((kpi) => (
+            <Card key={kpi.label} accent={kpi.accent}>
+              <CardContent className="p-4">
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-text-tertiary">
+                  {kpi.label}
+                </p>
+                <p className="mt-2 font-mono text-2xl font-medium tabular-nums tracking-tight text-text">
+                  {kpi.value}
+                </p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
 
       <Card>
