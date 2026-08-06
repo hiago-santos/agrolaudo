@@ -11,7 +11,7 @@ import {
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 
-import { PolygonMapField } from '@/components/map/PolygonMapField';
+import { LocationMapField } from '@/components/map/LocationMapField';
 import { BankReviewPanel } from '@/components/project/BankReviewPanel';
 import { ProjectStatusTimeline } from '@/components/project/ProjectStatusTimeline';
 import { SignaturesPanel } from '@/components/project/SignaturesPanel';
@@ -236,11 +236,10 @@ export function ProjectDetail() {
               {project.initiatedBy && ` · aberto por ${project.initiatedBy.name}`}
             </span>
           </div>
-          <PolygonMapField
-            polygon={project.financedAreaBoundary}
-            referencePolygon={project.property.boundary ?? null}
+          <LocationMapField
+            boundary={project.financedAreaBoundary}
+            referenceBoundary={project.property.boundary ?? null}
             referenceLabel="Contorno da propriedade"
-            editable={false}
             height="clamp(260px, 40vh, 440px)"
           />
         </Card>

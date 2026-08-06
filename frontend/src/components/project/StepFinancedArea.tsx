@@ -2,7 +2,7 @@ import { Landmark } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { PolygonMapField } from '@/components/map/PolygonMapField';
+import { LocationMapField } from '@/components/map/LocationMapField';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Label, Textarea } from '@/components/ui/Input';
@@ -93,11 +93,11 @@ export function StepFinancedArea({ draft, onChange, onBack }: StepFinancedAreaPr
           Desenhe no mapa o pedaço de {property?.name ?? 'propriedade'} que está sendo pleiteado pro
           financiamento. O agrônomo responsável poderá ajustar essa área ao completar o projeto.
         </p>
-        <PolygonMapField
-          polygon={draft.financedAreaBoundary}
-          onPolygonChange={(polygon) => onChange({ financedAreaBoundary: polygon })}
+        <LocationMapField
+          boundary={draft.financedAreaBoundary}
+          onBoundaryChange={(boundary) => onChange({ financedAreaBoundary: boundary })}
           center={center}
-          referencePolygon={property?.boundary ?? null}
+          referenceBoundary={property?.boundary ?? null}
           referenceLabel="Contorno da propriedade"
           height="clamp(320px, 58vh, 620px)"
         />

@@ -65,3 +65,12 @@ export function parseCoordinates(input: string): LatLng | null {
   if (Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
   return { lat, lng };
 }
+
+/** Par de campos separados (lat/lng) — null enquanto qualquer um dos dois estiver vazio ou inválido. */
+export function parseLatLngPair(latitude: string, longitude: string): LatLng | null {
+  if (!latitude.trim() || !longitude.trim()) return null;
+  const lat = Number(latitude);
+  const lng = Number(longitude);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  return { lat, lng };
+}

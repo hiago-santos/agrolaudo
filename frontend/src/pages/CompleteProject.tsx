@@ -2,7 +2,7 @@ import { ArrowLeft, Landmark } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 
-import { PolygonMapField } from '@/components/map/PolygonMapField';
+import { LocationMapField } from '@/components/map/LocationMapField';
 import { Step2Activities } from '@/components/project/Step2Activities';
 import { Step3Review } from '@/components/project/Step3Review';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -105,9 +105,8 @@ export function CompleteProject() {
                 ? ` · ${formatNumber(project.financedAreaHectares)} ha`
                 : ''}
             </p>
-            <PolygonMapField
-              polygon={project.financedAreaBoundary}
-              editable={false}
+            <LocationMapField
+              boundary={project.financedAreaBoundary}
               height="clamp(240px, 34vh, 380px)"
             />
           </div>
