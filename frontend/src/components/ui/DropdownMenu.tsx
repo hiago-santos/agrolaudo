@@ -134,7 +134,7 @@ export function DropdownMenuItem({
 
 export function DropdownMenuLabel({ children }: { children: ReactNode }) {
   return (
-    <p className="px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-widest text-text-tertiary">
+    <p className="px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-widest text-text-tertiary">
       {children}
     </p>
   );

@@ -17,6 +17,7 @@
   --color-accent-hover: var(--accent-hover);
   --color-accent-soft: var(--accent-soft);
   --color-accent-ring: var(--accent-ring);
+  --color-accent-contrast: var(--accent-contrast);
 
   --color-gold: var(--gold);
   --color-gold-soft: var(--gold-soft);
@@ -27,6 +28,7 @@
   --color-warning-soft: var(--warning-soft);
   --color-danger: var(--danger);
   --color-danger-soft: var(--danger-soft);
+  --color-danger-contrast: var(--danger-contrast);
 
   --font-display: 'Fraunces Variable', 'Fraunces', Georgia, serif;
   --font-sans: 'Public Sans', ui-sans-serif, system-ui, sans-serif;
@@ -62,6 +64,7 @@
   --accent-hover: #163b21;
   --accent-soft: rgba(30, 77, 43, 0.1);
   --accent-ring: rgba(30, 77, 43, 0.22);
+  --accent-contrast: #ffffff;
 
   --gold: #b8862e;
   --gold-soft: rgba(184, 134, 46, 0.12);
@@ -72,6 +75,7 @@
   --warning-soft: rgba(184, 134, 46, 0.12);
   --danger: #a34e3a;
   --danger-soft: rgba(163, 78, 58, 0.1);
+  --danger-contrast: #ffffff;
 }
 
 :root[data-theme='dark'] {
@@ -82,7 +86,7 @@
 
   --text: #f3efe2;
   --text-secondary: #b8b09a;
-  --text-tertiary: #7a7464;
+  --text-tertiary: #918a78;
 
   --border: rgba(243, 239, 226, 0.1);
   --border-strong: rgba(243, 239, 226, 0.18);
@@ -91,6 +95,7 @@
   --accent-hover: #6ee89a;
   --accent-soft: rgba(74, 222, 128, 0.12);
   --accent-ring: rgba(74, 222, 128, 0.28);
+  --accent-contrast: #14150f;
 
   --gold: #d4a84b;
   --gold-soft: rgba(212, 168, 75, 0.14);
@@ -101,6 +106,7 @@
   --warning-soft: rgba(212, 168, 75, 0.14);
   --danger: #e07a5f;
   --danger-soft: rgba(224, 122, 95, 0.12);
+  --danger-contrast: #14150f;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -112,7 +118,7 @@
 
     --text: #f3efe2;
     --text-secondary: #b8b09a;
-    --text-tertiary: #7a7464;
+    --text-tertiary: #918a78;
 
     --border: rgba(243, 239, 226, 0.1);
     --border-strong: rgba(243, 239, 226, 0.18);
@@ -121,6 +127,7 @@
     --accent-hover: #6ee89a;
     --accent-soft: rgba(74, 222, 128, 0.12);
     --accent-ring: rgba(74, 222, 128, 0.28);
+    --accent-contrast: #14150f;
 
     --gold: #d4a84b;
     --gold-soft: rgba(212, 168, 75, 0.14);
@@ -131,6 +138,7 @@
     --warning-soft: rgba(212, 168, 75, 0.14);
     --danger: #e07a5f;
     --danger-soft: rgba(224, 122, 95, 0.12);
+    --danger-contrast: #14150f;
   }
 }
 

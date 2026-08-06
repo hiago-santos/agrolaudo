@@ -99,7 +99,7 @@ export function CompleteProject() {
         </div>
         {project.financedAreaBoundary && (
           <div>
-            <p className="mb-1.5 text-[10px] uppercase tracking-wide text-text-tertiary">
+            <p className="mb-1.5 text-[11px] uppercase tracking-wide text-text-tertiary">
               Área financiada delimitada pelo banco
               {project.financedAreaHectares
                 ? ` · ${formatNumber(project.financedAreaHectares)} ha`
@@ -138,7 +138,7 @@ export function CompleteProject() {
 function SummaryLine({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-[10px] uppercase tracking-wide text-text-tertiary">{label}</p>
+      <p className="text-[11px] uppercase tracking-wide text-text-tertiary">{label}</p>
       <p className="text-sm font-medium text-text">{value}</p>
     </div>
   );

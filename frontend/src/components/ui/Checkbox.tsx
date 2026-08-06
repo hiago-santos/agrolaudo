@@ -28,7 +28,7 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
         <span
           aria-hidden
           className={cn(
-            'pointer-events-none flex h-4 w-4 items-center justify-center rounded-[4px] border border-border-strong bg-surface text-white',
+            'pointer-events-none flex h-4 w-4 items-center justify-center rounded-[4px] border border-border-strong bg-surface text-accent-contrast',
             'transition-[background-color,border-color,box-shadow] duration-150',
             'peer-hover:border-accent/60',
             'peer-focus-visible:border-accent peer-focus-visible:ring-2 peer-focus-visible:ring-accent-ring',
@@ -39,7 +39,7 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
         <Check
           aria-hidden
           strokeWidth={2.5}
-          className="pointer-events-none absolute h-3 w-3 text-white opacity-0 transition-opacity duration-150 peer-checked:opacity-100"
+          className="pointer-events-none absolute h-3 w-3 text-accent-contrast opacity-0 transition-opacity duration-150 peer-checked:opacity-100"
         />
       </span>
     );

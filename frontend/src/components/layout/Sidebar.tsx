@@ -43,7 +43,7 @@ export function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarProps) {
             <Seal size="sm" />
             <div>
               <p className="font-display text-sm font-semibold leading-none text-text">AgroLaudo</p>
-              <p className="mt-1 text-[10px] uppercase tracking-widest text-text-tertiary">
+              <p className="mt-1 text-[11px] uppercase tracking-widest text-text-tertiary">
                 Capacidade Pagadora
               </p>
             </div>
@@ -81,7 +81,7 @@ export function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarProps) {
           ))}
         </nav>
 
-        <div className="border-t border-border px-4 py-3 text-[10px] uppercase tracking-wider text-text-tertiary">
+        <div className="border-t border-border px-4 py-3 text-[11px] uppercase tracking-wider text-text-tertiary">
           Laudos de Capacidade Pagadora
         </div>
       </aside>

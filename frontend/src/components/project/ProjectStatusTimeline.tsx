@@ -89,9 +89,9 @@ export function ProjectStatusTimeline({ status, wasBankInitiated }: ProjectStatu
               className={cn(
                 'relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition-colors',
                 isDecisionStep && rejected
-                  ? 'bg-danger text-white'
+                  ? 'bg-danger text-danger-contrast'
                   : done
-                    ? 'bg-accent text-white'
+                    ? 'bg-accent text-accent-contrast'
                     : 'bg-bg-subtle text-text-tertiary',
               )}
             >
@@ -99,7 +99,7 @@ export function ProjectStatusTimeline({ status, wasBankInitiated }: ProjectStatu
             </div>
             <span
               className={cn(
-                'mt-1.5 w-full text-center text-[10px] font-medium leading-tight sm:text-[11px]',
+                'mt-1.5 w-full text-center text-[11px] font-medium leading-tight',
                 done || (isDecisionStep && rejected) ? 'text-text' : 'text-text-tertiary',
               )}
             >

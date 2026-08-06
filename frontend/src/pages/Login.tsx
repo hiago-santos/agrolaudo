@@ -129,7 +129,7 @@ export function Login() {
         </div>
 
         <div className="mb-4 space-y-2 rounded-lg border border-gold/40 bg-gold-soft p-4">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-gold">
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-gold">
             Prévia — entrar sem senha
           </p>
           <div className="grid grid-cols-3 gap-2">
@@ -156,7 +156,7 @@ export function Login() {
           className="space-y-4 rounded-lg border border-border-strong bg-surface p-6"
         >
           <div className="border-b border-border pb-3">
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-text-tertiary">
+            <p className="text-[11px] font-semibold uppercase tracking-widest text-text-tertiary">
               Acesso restrito
             </p>
           </div>

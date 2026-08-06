@@ -311,7 +311,7 @@ function Summary({
 }) {
   return (
     <div>
-      <p className="text-[10px] uppercase tracking-wide text-text-tertiary">{label}</p>
+      <p className="text-[11px] uppercase tracking-wide text-text-tertiary">{label}</p>
       <p
         className={
           highlight ? 'text-sm font-semibold text-accent' : 'text-sm font-medium text-text'

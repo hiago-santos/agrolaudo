@@ -74,7 +74,7 @@ export function Dashboard() {
         {kpis.map((kpi, index) => (
           <Card key={kpi.label} accent={KPI_ACCENTS[index] ?? 'neutral'}>
             <CardContent className="p-4">
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-text-tertiary">
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-text-tertiary">
                 {kpi.label}
               </p>
               <p className="mt-2 font-mono text-2xl font-medium tabular-nums tracking-tight text-text">

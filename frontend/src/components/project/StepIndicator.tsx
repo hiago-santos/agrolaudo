@@ -30,7 +30,7 @@ export function StepIndicator({ current }: { current: number }) {
               <div
                 className={cn(
                   'flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-colors',
-                  done && 'bg-accent text-white',
+                  done && 'bg-accent text-accent-contrast',
                   active && 'bg-accent-soft text-accent ring-2 ring-accent-ring',
                   !done && !active && 'bg-bg-subtle text-text-tertiary',
                 )}
