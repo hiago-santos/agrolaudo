@@ -1,4 +1,4 @@
-import { Check } from 'lucide-react';
+import { Check } from '@phosphor-icons/react';
 import { forwardRef, type InputHTMLAttributes } from 'react';
 
 import { cn } from '@/lib/cn';
@@ -38,7 +38,7 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
         />
         <Check
           aria-hidden
-          strokeWidth={2.5}
+          weight="bold"
           className="pointer-events-none absolute h-3 w-3 text-accent-contrast opacity-0 transition-opacity duration-150 peer-checked:opacity-100"
         />
       </span>

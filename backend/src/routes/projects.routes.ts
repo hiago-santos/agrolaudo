@@ -107,6 +107,22 @@ const projectsRoutes: FastifyPluginAsyncZod<ProjectsRoutesOptions> = async (app,
     async (request) => projectsService.cancelProject(app.prisma, request.params.id),
   );
 
+  app.delete(
+    '/:id',
+    {
+      preHandler: [app.requireRole('ADMIN', 'AGRONOMIST')],
+      schema: {
+        params: projectParamsSchema,
+        tags: ['projects'],
+        summary: 'Exclui permanentemente o projeto e seus anexos',
+      },
+    },
+    async (request, reply) => {
+      await projectsService.deleteProject(app.prisma, opts.env, request.params.id);
+      reply.status(204);
+    },
+  );
+
   app.post(
     '/:id/submit-for-review',
     {

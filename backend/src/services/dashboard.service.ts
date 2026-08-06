@@ -15,7 +15,9 @@ export async function getDashboardSummary(prisma: PrismaClient) {
   ] = await Promise.all([
     prisma.project.count({ where: { createdAt: { gte: startOfMonth } } }),
     prisma.project.count({ where: { status: 'PENDING_SIGNATURES' } }),
-    prisma.project.count({ where: { status: 'UNDER_BANK_REVIEW' } }),
+    prisma.project.count({
+      where: { status: { in: ['UNDER_BANK_REVIEW', 'AWAITING_PRODUCER_INFO'] } },
+    }),
     prisma.producer.count(),
     prisma.project.findMany({
       orderBy: { createdAt: 'desc' },

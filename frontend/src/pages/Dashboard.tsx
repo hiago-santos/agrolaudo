@@ -1,15 +1,13 @@
-import { FilePlus2, FileStack } from 'lucide-react';
+import { FilePlus, Files } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { Badge } from '@/components/ui/Badge';
 import { buttonVariants } from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/Card';
+import { CompactCurrency, CompactName, CompactStatus } from '@/components/ui/Compact';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { SkeletonCards, SkeletonList, SkeletonPageHeader } from '@/components/ui/Skeleton';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { formatCurrency } from '@/lib/format';
-import { PROJECT_STATUS_LABEL, PROJECT_STATUS_TONE } from '@/lib/projectStatus';
 import { dashboardService } from '@/services/dashboard';
 import { toast } from '@/stores/toast';
 import type { DashboardSummary } from '@/types/domain';
@@ -80,7 +78,7 @@ export function Dashboard() {
         description="Visão geral da emissão de projetos"
         actions={
           <Link to="/projects/new" className={buttonVariants('primary', 'md')}>
-            <FilePlus2 className="h-4 w-4" />
+            <FilePlus className="h-4 w-4" />
             Novo Projeto
           </Link>
         }
@@ -92,8 +90,11 @@ export function Dashboard() {
             <p className="text-[11px] font-semibold uppercase tracking-widest text-text-tertiary">
               Faturamento no mês
             </p>
-            <p className="font-mono text-3xl font-medium tabular-nums tracking-tight text-text">
-              {formatCurrency(summary.revenueThisMonth)}
+            <p
+              data-compact-host
+              className="min-w-0 font-mono text-2xl font-medium tabular-nums tracking-tight text-text sm:text-3xl"
+            >
+              <CompactCurrency value={summary.revenueThisMonth} />
             </p>
           </CardContent>
         </Card>
@@ -128,7 +129,7 @@ export function Dashboard() {
         {summary.recentProjects.length === 0 ? (
           <div className="p-5">
             <EmptyState
-              icon={FileStack}
+              icon={Files}
               title="Nenhum projeto emitido ainda"
               description="Quando você emitir o primeiro projeto, ele aparece aqui."
               action={
@@ -147,18 +148,19 @@ export function Dashboard() {
                   className="flex items-center justify-between gap-4 px-5 py-3.5 text-sm transition-colors hover:bg-bg-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring focus-visible:ring-inset"
                 >
                   <div className="min-w-0">
-                    <p className="truncate font-medium text-text">{project.producer.name}</p>
+                    <p className="truncate font-medium text-text">
+                      <CompactName name={project.producer.name} />
+                    </p>
                     <p className="truncate font-mono text-xs tabular-nums text-text-secondary">
-                      {project.number} · {project.property.name}
+                      {project.number}
+                      <span className="hidden sm:inline"> · {project.property.name}</span>
                     </p>
                   </div>
-                  <div className="flex shrink-0 items-center gap-3">
+                  <div className="flex shrink-0 items-center gap-2 sm:gap-3">
                     <span className="font-mono text-sm font-medium tabular-nums text-text">
-                      {formatCurrency(project.totalRevenue)}
+                      <CompactCurrency value={project.totalRevenue} />
                     </span>
-                    <Badge tone={PROJECT_STATUS_TONE[project.status]}>
-                      {PROJECT_STATUS_LABEL[project.status]}
-                    </Badge>
+                    <CompactStatus status={project.status} className="max-sm:hidden" />
                   </div>
                 </Link>
               </li>

@@ -1,4 +1,4 @@
-import { Check, ChevronDown } from 'lucide-react';
+import { CaretDown, Check } from '@phosphor-icons/react';
 import {
   useEffect,
   useId,
@@ -233,7 +233,7 @@ export function Select({
         <span className={cn('min-w-0 truncate', !selected && 'text-text-tertiary')}>
           {selected ? selected.label : placeholder}
         </span>
-        <ChevronDown
+        <CaretDown
           aria-hidden
           className={cn(
             'h-4 w-4 shrink-0 text-text-tertiary transition-transform duration-150',

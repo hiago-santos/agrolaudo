@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Landmark, Sprout, UserCog } from 'lucide-react';
+import { Bank, Plant, UserGear } from '@phosphor-icons/react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
@@ -30,7 +30,7 @@ interface QuickLoginEntry {
   label: string;
   email: string;
   password: string;
-  icon: typeof UserCog;
+  icon: typeof UserGear;
 }
 
 const QUICK_LOGIN: QuickLoginEntry[] = [
@@ -39,21 +39,21 @@ const QUICK_LOGIN: QuickLoginEntry[] = [
     label: 'Administrador',
     email: 'admin@admin.local',
     password: 'admin123',
-    icon: UserCog,
+    icon: UserGear,
   },
   {
     role: 'AGRONOMIST',
     label: 'Engenheiro Agrônomo',
     email: 'pedro.agronomist@agrolaudo.local',
     password: 'agronomist123',
-    icon: Sprout,
+    icon: Plant,
   },
   {
     role: 'BANK',
     label: 'Banco',
     email: 'bank@agrolaudo.local',
     password: 'bank123',
-    icon: Landmark,
+    icon: Bank,
   },
 ];
 
@@ -120,10 +120,10 @@ export function Login() {
       <div className="relative w-full max-w-sm animate-page-enter">
         <div className="mb-8 flex flex-col items-center text-center">
           <Seal size="lg" />
-          <h1 className="mt-5 font-display text-2xl font-semibold tracking-tight text-text">
+          <h1 className="mt-5 font-display text-3xl font-semibold tracking-tight text-text sm:text-4xl">
             AgroLaudo
           </h1>
-          <p className="mt-2 max-w-xs text-sm text-text-secondary">
+          <p className="mt-2.5 max-w-xs text-sm text-text-secondary">
             Laudos de Capacidade Pagadora para produtores rurais
           </p>
         </div>

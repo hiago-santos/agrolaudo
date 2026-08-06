@@ -8,6 +8,16 @@ const envSchema = z.object({
   JWT_SECRET: z.string().min(8, 'JWT_SECRET precisa ter pelo menos 8 caracteres.'),
   CORS_ORIGIN: z.string().default('http://localhost:5173'),
   PUBLIC_APP_URL: z.string().default('http://localhost:5173'),
+  MINIO_ENDPOINT: z.string().default('localhost'),
+  MINIO_PORT: z.coerce.number().int().positive().default(9000),
+  MINIO_USE_SSL: z
+    .string()
+    .default('false')
+    .transform((v) => v === 'true' || v === '1'),
+  MINIO_ACCESS_KEY: z.string().default('minioadmin'),
+  MINIO_SECRET_KEY: z.string().default('minioadmin'),
+  MINIO_BUCKET: z.string().default('agrolaudo'),
+  MINIO_REGION: z.string().default('us-east-1'),
 });
 
 export type Env = z.infer<typeof envSchema>;

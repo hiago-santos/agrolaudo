@@ -1,4 +1,4 @@
-import { Eraser } from 'lucide-react';
+import { Eraser } from '@phosphor-icons/react';
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import SignaturePadLib from 'signature_pad';
 
@@ -9,12 +9,14 @@ export interface SignaturePadHandle {
 }
 
 interface SignaturePadProps {
-  label: string;
+  label?: string;
   disabled?: boolean;
+  /** Quando false, só o canvas — a barra de título/limpar fica a cargo do pai. */
+  toolbar?: boolean;
 }
 
 export const SignaturePad = forwardRef<SignaturePadHandle, SignaturePadProps>(function SignaturePad(
-  { label, disabled },
+  { label = 'Assinar na tela', disabled, toolbar = true },
   ref,
 ) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -63,21 +65,23 @@ export const SignaturePad = forwardRef<SignaturePadHandle, SignaturePadProps>(fu
 
   return (
     <div>
-      <div className="mb-1.5 flex items-center justify-between">
-        <span className="text-xs font-medium text-text-secondary">{label}</span>
-        <button
-          type="button"
-          onClick={() => {
-            padRef.current?.clear();
-            setEmpty(true);
-          }}
-          disabled={disabled || empty}
-          className="flex items-center gap-1 text-xs text-text-tertiary hover:text-danger disabled:opacity-40"
-        >
-          <Eraser className="h-3 w-3" />
-          Limpar
-        </button>
-      </div>
+      {toolbar && (
+        <div className="mb-1.5 flex h-5 items-center justify-between">
+          <span className="text-xs font-medium text-text-secondary">{label}</span>
+          <button
+            type="button"
+            onClick={() => {
+              padRef.current?.clear();
+              setEmpty(true);
+            }}
+            disabled={disabled || empty}
+            className="flex items-center gap-1 text-xs text-text-tertiary hover:text-danger disabled:opacity-40"
+          >
+            <Eraser className="h-3 w-3" />
+            Limpar
+          </button>
+        </div>
+      )}
       <div className="overflow-hidden rounded-lg border border-border-strong bg-white">
         <canvas ref={canvasRef} className="h-36 w-full touch-none" />
       </div>

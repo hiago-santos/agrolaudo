@@ -16,7 +16,7 @@ import {
   TableRow,
 } from '@/components/ui/Table';
 import { ApiError } from '@/lib/api';
-import { formatCurrency } from '@/lib/format';
+import { CompactCurrency, CompactName } from '@/components/ui/Compact';
 import { unitLabel } from '@/lib/units';
 import { publicService, type PublicProject } from '@/services/public';
 import { toast } from '@/stores/toast';
@@ -68,7 +68,9 @@ export function SignPublic() {
     <div className="min-h-screen bg-bg px-4 py-8">
       <div className="mx-auto flex max-w-2xl flex-col items-center gap-1 pb-8 text-center">
         <Seal size="md" />
-        <h1 className="mt-3 font-display text-lg font-semibold text-text">AgroLaudo</h1>
+        <h1 className="mt-4 font-display text-2xl font-semibold tracking-tight text-text">
+          AgroLaudo
+        </h1>
         <p className="text-sm text-text-secondary">
           Assinatura digital do Laudo de Capacidade Pagadora
         </p>
@@ -114,15 +116,15 @@ export function SignPublic() {
               <div className="space-y-1 p-5 text-sm">
                 <p className="font-mono font-medium text-text">{data.project.number}</p>
                 <p className="text-text-secondary">
-                  {data.project.producer.name} · {data.project.property.name} · Safra{' '}
-                  {data.project.season.label}
+                  <CompactName name={data.project.producer.name} /> · {data.project.property.name} ·
+                  Safra {data.project.season.label}
                 </p>
               </div>
-              <Table className="min-w-[480px]">
+              <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Atividade</TableHead>
-                    <TableHead>Unidade</TableHead>
+                    <TableHead className="hidden sm:table-cell">Unidade</TableHead>
                     <TableHead className="text-right">Receita Líquida</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -130,9 +132,11 @@ export function SignPublic() {
                   {data.project.items.map((item) => (
                     <TableRow key={item.id}>
                       <TableCell className="font-medium">{item.activityName}</TableCell>
-                      <TableCell className="text-text-secondary">{unitLabel(item.unit)}</TableCell>
+                      <TableCell className="hidden text-text-secondary sm:table-cell">
+                        {unitLabel(item.unit)}
+                      </TableCell>
                       <TableCell className="text-right font-mono tabular-nums">
-                        {formatCurrency(item.netProfit)}
+                        <CompactCurrency value={item.netProfit} />
                       </TableCell>
                     </TableRow>
                   ))}
@@ -141,7 +145,7 @@ export function SignPublic() {
               <div className="flex items-center justify-between border-t border-border px-5 py-3 text-sm">
                 <span className="text-text-secondary">Receita líquida total</span>
                 <span className="font-mono font-semibold tabular-nums text-accent">
-                  {formatCurrency(data.project.totalProfit)}
+                  <CompactCurrency value={data.project.totalProfit} />
                 </span>
               </div>
             </Card>

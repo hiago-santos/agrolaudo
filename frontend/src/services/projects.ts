@@ -82,6 +82,8 @@ export const projectsService = {
 
   cancel: (id: string) => api<Project>(`/projects/${id}/cancel`, { method: 'POST' }),
 
+  remove: (id: string) => api<void>(`/projects/${id}`, { method: 'DELETE' }),
+
   submitForReview: (id: string) =>
     api<Project>(`/projects/${id}/submit-for-review`, { method: 'POST' }),
 

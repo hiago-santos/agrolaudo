@@ -25,6 +25,7 @@ export const PROJECT_DETAIL_INCLUDE = {
   initiatedBy: { select: { id: true, name: true, email: true } },
   items: { orderBy: { order: 'asc' as const } },
   signatures: true,
+  messages: { orderBy: { createdAt: 'asc' as const } },
 } satisfies Prisma.ProjectInclude;
 
 export type ProjectDetail = Prisma.ProjectGetPayload<{ include: typeof PROJECT_DETAIL_INCLUDE }>;

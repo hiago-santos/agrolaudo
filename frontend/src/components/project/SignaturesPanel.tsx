@@ -1,3 +1,4 @@
+import { Eraser } from '@phosphor-icons/react';
 import { Check, Copy, Link as LinkIcon, PenLine } from 'lucide-react';
 import { useRef, useState } from 'react';
 
@@ -34,7 +35,7 @@ export function SignaturesPanel({ project, onUpdated }: SignaturesPanelProps) {
   }
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2">
+    <div className="grid items-stretch gap-4 sm:grid-cols-2">
       {(['AGRONOMIST', 'PRODUCER'] as const).map((type) => (
         <SignatureBlock
           key={type}
@@ -106,9 +107,15 @@ function SignatureBlock({
     toast.info('Link copiado.');
   }
 
+  const padLabel = alreadySigned
+    ? 'Assinatura'
+    : canSign
+      ? 'Assinar na tela'
+      : 'Aguardando assinatura';
+
   return (
-    <Card className="flex h-full flex-col gap-3 p-5">
-      <div>
+    <Card className="flex h-full flex-col p-5">
+      <div className="mb-3 min-h-[3.5rem] shrink-0">
         <p className="text-xs font-semibold uppercase tracking-wide text-text-tertiary">
           {TYPE_LABEL[type]}
         </p>
@@ -116,55 +123,90 @@ function SignatureBlock({
         <p className="text-xs text-text-secondary">{document}</p>
       </div>
 
-      {alreadySigned ? (
-        <div className="flex flex-1 items-center gap-2 rounded-lg border border-success/30 bg-success-soft px-3 py-2 text-xs text-success">
-          <Check className="h-4 w-4 shrink-0" />
-          <span>
-            Assinado em {formatDateTime(signature?.signedAt)}
-            {signature?.hash ? ` · Hash ${signature.hash}` : ''}
-          </span>
-        </div>
-      ) : canSign ? (
-        <div className="space-y-2">
-          <SignaturePad ref={padRef} label="Assinar na tela" />
-          <div className="flex flex-wrap gap-2">
-            <Button size="sm" onClick={() => void confirmSignature()} loading={sending}>
-              <PenLine className="h-3.5 w-3.5" />
-              Confirmar assinatura
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => void generateLink()}
-              loading={generatingLink}
-            >
-              <LinkIcon className="h-3.5 w-3.5" />
-              Gerar link remoto
-            </Button>
-          </div>
-          {link && (
-            <div className="flex items-center gap-2 rounded-lg border border-border bg-bg-subtle px-2 py-1.5">
-              <input
-                readOnly
-                value={link}
-                className="flex-1 truncate bg-transparent text-xs text-text-secondary"
+      <div className="mb-1.5 flex h-5 shrink-0 items-center justify-between">
+        <span className="text-xs font-medium text-text-secondary">{padLabel}</span>
+        {!alreadySigned && canSign && (
+          <button
+            type="button"
+            onClick={() => padRef.current?.clear()}
+            className="flex items-center gap-1 text-xs text-text-tertiary hover:text-danger"
+          >
+            <Eraser className="h-3 w-3" />
+            Limpar
+          </button>
+        )}
+      </div>
+
+      <div className="mb-3 shrink-0">
+        {alreadySigned ? (
+          <div className="flex h-36 items-center justify-center overflow-hidden rounded-lg border border-border-strong bg-white px-3">
+            {signature?.imageBase64 ? (
+              <img
+                src={signature.imageBase64}
+                alt={`Assinatura de ${signatoryName}`}
+                className="max-h-32 w-full object-contain"
               />
-              <button
-                type="button"
-                onClick={copyLink}
-                className="shrink-0 rounded-md p-1 text-text-tertiary hover:bg-surface hover:text-accent"
-                aria-label="Copiar link"
+            ) : (
+              <p className="text-xs text-text-tertiary">Assinatura registrada sem imagem.</p>
+            )}
+          </div>
+        ) : canSign ? (
+          <SignaturePad ref={padRef} toolbar={false} />
+        ) : (
+          <div className="flex h-36 items-center justify-center rounded-lg border border-dashed border-border bg-bg-subtle">
+            <p className="text-xs text-text-tertiary">Aguardando assinatura.</p>
+          </div>
+        )}
+      </div>
+
+      <div className="mt-auto flex min-h-8 flex-col gap-2">
+        {alreadySigned ? (
+          <div className="flex items-center gap-2 rounded-lg border border-success/30 bg-success-soft px-3 py-2 text-xs text-success">
+            <Check className="h-4 w-4 shrink-0" />
+            <span>
+              Assinado em {formatDateTime(signature?.signedAt)}
+              {signature?.hash ? ` · Hash ${signature.hash.slice(0, 12)}` : ''}
+            </span>
+          </div>
+        ) : canSign ? (
+          <>
+            <div className="flex min-h-8 flex-wrap gap-2">
+              <Button size="sm" onClick={() => void confirmSignature()} loading={sending}>
+                <PenLine className="h-3.5 w-3.5" />
+                Confirmar assinatura
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => void generateLink()}
+                loading={generatingLink}
               >
-                <Copy className="h-3.5 w-3.5" />
-              </button>
+                <LinkIcon className="h-3.5 w-3.5" />
+                Gerar link remoto
+              </Button>
             </div>
-          )}
-        </div>
-      ) : (
-        <p className="flex flex-1 items-center text-xs text-text-tertiary">
-          Aguardando assinatura.
-        </p>
-      )}
+            {link && (
+              <div className="flex items-center gap-2 rounded-lg border border-border bg-bg-subtle px-2 py-1.5">
+                <input
+                  readOnly
+                  value={link}
+                  className="flex-1 truncate bg-transparent text-xs text-text-secondary"
+                />
+                <button
+                  type="button"
+                  onClick={copyLink}
+                  className="shrink-0 rounded-md p-1 text-text-tertiary hover:bg-surface hover:text-accent"
+                  aria-label="Copiar link"
+                >
+                  <Copy className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="min-h-8" />
+        )}
+      </div>
     </Card>
   );
 }

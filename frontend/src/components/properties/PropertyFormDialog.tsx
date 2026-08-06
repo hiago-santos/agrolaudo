@@ -8,8 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { FieldError, Input, Label } from '@/components/ui/Input';
 import { ApiError } from '@/lib/api';
-import { formatNumber } from '@/lib/format';
-import { polygonAreaHectares, type LatLng } from '@/lib/geo';
+import { polygonAreaHectares, polygonCentroid, type LatLng } from '@/lib/geo';
 import { propertiesService } from '@/services/properties';
 import { toast } from '@/stores/toast';
 import type { GeoPolygon, Property } from '@/types/domain';
@@ -51,11 +50,39 @@ export function PropertyFormDialog({
   } = useForm<FormValues>({ resolver: zodResolver(schema) });
   const [boundary, setBoundary] = useState<GeoPolygon | null>(null);
   const [point, setPoint] = useState<LatLng | null>(null);
+  const [latInput, setLatInput] = useState('');
+  const [lngInput, setLngInput] = useState('');
 
   const drawnAreaHectares = useMemo(
     () => (boundary ? polygonAreaHectares(boundary) : null),
     [boundary],
   );
+  const drawnCentroid = useMemo(
+    () => (boundary ? polygonCentroid(boundary) : null),
+    [boundary],
+  );
+
+  function syncPoint(next: LatLng | null) {
+    setPoint(next);
+    setLatInput(next ? next.lat.toFixed(6) : '');
+    setLngInput(next ? next.lng.toFixed(6) : '');
+  }
+
+  function handleCoordinateInput(nextLat: string, nextLng: string) {
+    setLatInput(nextLat);
+    setLngInput(nextLng);
+    if (!nextLat.trim() || !nextLng.trim()) {
+      setPoint(null);
+      return;
+    }
+    const lat = Number(nextLat);
+    const lng = Number(nextLng);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+      setPoint(null);
+      return;
+    }
+    setPoint({ lat, lng });
+  }
 
   useEffect(() => {
     if (open) {
@@ -81,13 +108,28 @@ export function PropertyFormDialog({
             },
       );
       setBoundary(property?.boundary ?? null);
-      setPoint(
+      syncPoint(
         property?.latitude && property?.longitude
           ? { lat: Number(property.latitude), lng: Number(property.longitude) }
           : null,
       );
     }
   }, [open, property, reset]);
+
+  // Área total acompanha o perímetro desenhado no mapa.
+  useEffect(() => {
+    if (drawnAreaHectares === null) return;
+    setValue('totalAreaHectares', Number(drawnAreaHectares.toFixed(2)), {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
+  }, [drawnAreaHectares, setValue]);
+
+  // Referência de localização acompanha o centro geométrico do desenho.
+  useEffect(() => {
+    if (!drawnCentroid) return;
+    syncPoint(drawnCentroid);
+  }, [drawnCentroid]);
 
   async function onSubmit(data: FormValues) {
     try {
@@ -156,22 +198,6 @@ export function PropertyFormDialog({
                 {...register('totalAreaHectares')}
               />
               <FieldError>{errors.totalAreaHectares?.message}</FieldError>
-              {drawnAreaHectares !== null && (
-                <p className="mt-1 text-[11px] text-text-tertiary">
-                  Mapa: {formatNumber(drawnAreaHectares)} ha ·{' '}
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setValue('totalAreaHectares', Number(drawnAreaHectares.toFixed(2)), {
-                        shouldValidate: true,
-                      })
-                    }
-                    className="rounded-sm font-medium text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring"
-                  >
-                    usar
-                  </button>
-                </p>
-              )}
             </div>
           </div>
 
@@ -198,6 +224,34 @@ export function PropertyFormDialog({
               <Input id="ruralEnvironmentalRegistry" {...register('ruralEnvironmentalRegistry')} />
             </div>
           </div>
+
+          <div className="space-y-3 border-t border-border pt-4">
+            <p className="text-xs font-medium text-text-secondary">Referência de localização</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="property-lat">Latitude</Label>
+                <Input
+                  id="property-lat"
+                  type="number"
+                  step="0.000001"
+                  value={latInput}
+                  onChange={(event) => handleCoordinateInput(event.target.value, lngInput)}
+                  placeholder="-20.540000"
+                />
+              </div>
+              <div>
+                <Label htmlFor="property-lng">Longitude</Label>
+                <Input
+                  id="property-lng"
+                  type="number"
+                  step="0.000001"
+                  value={lngInput}
+                  onChange={(event) => handleCoordinateInput(latInput, event.target.value)}
+                  placeholder="-47.385000"
+                />
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="min-w-0">
@@ -206,7 +260,8 @@ export function PropertyFormDialog({
             boundary={boundary}
             onBoundaryChange={setBoundary}
             point={point}
-            onPointChange={setPoint}
+            onPointChange={syncPoint}
+            showPointFields={false}
             pointLabel="Localização da propriedade"
             center={point}
             height="clamp(280px, 48vh, 540px)"

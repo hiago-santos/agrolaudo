@@ -1,17 +1,23 @@
-import { ArrowLeft, MapPin, Pencil, Plus, Sprout } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import {
+  ArrowLeft,
+  EnvelopeSimple,
+  MapPin,
+  Pencil,
+  Phone,
+  Plus,
+} from '@phosphor-icons/react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
 import { LocationMapField } from '@/components/map/LocationMapField';
 import { ProducerFormDialog } from '@/components/producers/ProducerFormDialog';
 import { PropertyFormDialog } from '@/components/properties/PropertyFormDialog';
-import { PageHeader } from '@/components/layout/PageHeader';
 import { Badge } from '@/components/ui/Badge';
-import { Button, buttonVariants } from '@/components/ui/Button';
-import { Card, CardContent } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { SkeletonCards, SkeletonPageHeader, SkeletonText } from '@/components/ui/Skeleton';
-import { formatNumber } from '@/lib/format';
+import { cn } from '@/lib/cn';
+import { formatNumber, formatPhone } from '@/lib/format';
 import { producersService } from '@/services/producers';
 import { useAuthStore } from '@/stores/auth';
 import { toast } from '@/stores/toast';
@@ -51,24 +57,24 @@ export function ProducerDetail() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-8">
         <SkeletonPageHeader />
-        <SkeletonCards count={3} className="sm:grid-cols-3" />
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Card className="p-5">
-            <SkeletonText lines={3} />
-          </Card>
-          <Card className="p-5">
-            <SkeletonText lines={3} />
-          </Card>
+        <div className="rounded-lg border border-border bg-surface p-5 sm:p-6">
+          <SkeletonText lines={4} />
         </div>
+        <SkeletonCards count={2} className="sm:grid-cols-2" />
       </div>
     );
   }
   if (!producer) return null;
 
+  const totalAreaHa = producer.properties.reduce(
+    (sum, property) => sum + Number(property.totalAreaHectares || 0),
+    0,
+  );
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <Link
         to="/producers"
         className="inline-flex items-center gap-1.5 text-xs font-medium text-text-secondary transition-colors hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring"
@@ -77,56 +83,94 @@ export function ProducerDetail() {
         Voltar para produtores
       </Link>
 
-      <PageHeader
-        title={producer.name}
-        description={`${producer.taxId} · ${producer.city}-${producer.state}`}
-        actions={
-          canEdit && (
-            <Button variant="outline" size="sm" onClick={() => setEditProducerOpen(true)}>
-              <Pencil className="h-3.5 w-3.5" />
-              Editar
-            </Button>
-          )
-        }
-      />
+      <section className="overflow-hidden rounded-lg border border-border bg-surface shadow-[0_1px_3px_rgba(34,31,23,0.05)]">
+        <div className="border-b border-border bg-[linear-gradient(135deg,var(--accent-soft)_0%,transparent_55%)] px-5 py-5 sm:px-6 sm:py-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0 space-y-2">
+              <div className="flex flex-wrap items-center gap-2.5">
+                <h1 className="font-display text-2xl font-semibold tracking-tight text-text sm:text-[1.75rem]">
+                  {producer.name}
+                </h1>
+                <Badge tone="accent">{CLASSIFICATION_LABEL[producer.classification]}</Badge>
+              </div>
+              <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-text-secondary">
+                <span className="inline-flex items-center gap-1.5">
+                  <MapPin className="h-3.5 w-3.5 shrink-0 text-text-tertiary" />
+                  {producer.city}-{producer.state}
+                </span>
+                <span className="text-text-tertiary" aria-hidden>
+                  ·
+                </span>
+                <span className="font-mono text-[13px] tabular-nums text-text">
+                  {producer.taxId}
+                </span>
+              </p>
+            </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <Card>
-          <CardContent className="p-5">
-            <p className="text-xs font-medium text-text-secondary">Classificação</p>
-            <Badge tone="accent" className="mt-2">
-              {CLASSIFICATION_LABEL[producer.classification]}
-            </Badge>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-5">
-            <p className="text-xs font-medium text-text-secondary">Contato</p>
-            <p className="mt-1 text-sm text-text">{producer.phone || '—'}</p>
-            <p className="text-sm text-text-secondary">{producer.email || '—'}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-5">
-            <p className="text-xs font-medium text-text-secondary">Propriedades</p>
-            <p className="mt-1 text-2xl font-semibold text-text">{producer.properties.length}</p>
-          </CardContent>
-        </Card>
-      </div>
+            {canEdit && (
+              <Button variant="outline" size="sm" onClick={() => setEditProducerOpen(true)}>
+                <Pencil className="h-3.5 w-3.5" />
+                Editar
+              </Button>
+            )}
+          </div>
+        </div>
 
-      <Card>
-        <div className="flex items-center justify-between border-b border-border p-5">
-          <h2 className="text-sm font-semibold text-text">Propriedades</h2>
+        <dl className="grid gap-px bg-border sm:grid-cols-2 lg:grid-cols-4">
+          <DataCell
+            label="Telefone"
+            value={formatPhone(producer.phone)}
+            icon={<Phone className="h-3.5 w-3.5" />}
+          />
+          <DataCell
+            label="E-mail"
+            value={producer.email || '—'}
+            icon={<EnvelopeSimple className="h-3.5 w-3.5" />}
+            truncate
+          />
+          <DataCell
+            label="Propriedades"
+            value={
+              producer.properties.length === 0
+                ? 'Nenhuma'
+                : `${producer.properties.length} cadastrada${producer.properties.length === 1 ? '' : 's'}`
+            }
+          />
+          <DataCell
+            label="Área total"
+            value={producer.properties.length === 0 ? '—' : `${formatNumber(totalAreaHa)} ha`}
+            emphasize
+          />
+          {producer.address && (
+            <DataCell
+              label="Endereço"
+              value={producer.address}
+              className="sm:col-span-2 lg:col-span-4"
+            />
+          )}
+        </dl>
+      </section>
+
+      <section className="space-y-4">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 className="font-display text-lg font-semibold tracking-tight text-text">
+              Propriedades
+            </h2>
+            <p className="mt-0.5 text-sm text-text-secondary">
+              Fazendas e matrículas vinculadas a este produtor.
+            </p>
+          </div>
           {canEdit && (
             <Button size="sm" variant="outline" onClick={() => setNewPropertyOpen(true)}>
               <Plus className="h-3.5 w-3.5" />
-              Nova Propriedade
+              Nova propriedade
             </Button>
           )}
         </div>
 
         {producer.properties.length === 0 ? (
-          <div className="p-5">
+          <div className="rounded-lg border border-dashed border-border-strong bg-bg-subtle/60 p-6">
             <EmptyState
               icon={MapPin}
               title="Nenhuma propriedade cadastrada"
@@ -134,11 +178,10 @@ export function ProducerDetail() {
             />
           </div>
         ) : (
-          <div className="grid gap-4 p-5 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-2">
             {producer.properties.map((property) => (
               <PropertyCard
                 key={property.id}
-                producerId={producer.id}
                 property={property}
                 canEdit={canEdit}
                 onEdit={() => setEditingProperty(property)}
@@ -146,7 +189,7 @@ export function ProducerDetail() {
             ))}
           </div>
         )}
-      </Card>
+      </section>
 
       <ProducerFormDialog
         open={editProducerOpen}
@@ -173,15 +216,48 @@ export function ProducerDetail() {
   );
 }
 
+function DataCell({
+  label,
+  value,
+  icon,
+  emphasize,
+  truncate,
+  className,
+}: {
+  label: string;
+  value: string;
+  icon?: ReactNode;
+  emphasize?: boolean;
+  truncate?: boolean;
+  className?: string;
+}) {
+  return (
+    <div className={cn('bg-surface px-5 py-4 sm:px-6', className)}>
+      <dt className="text-[11px] font-semibold uppercase tracking-wider text-text-tertiary">
+        {label}
+      </dt>
+      <dd
+        className={cn(
+          'mt-1.5 flex items-center gap-1.5 text-sm text-text',
+          emphasize && 'font-display text-base font-semibold tracking-tight',
+          truncate && 'min-w-0',
+        )}
+      >
+        {icon && <span className="shrink-0 text-text-tertiary">{icon}</span>}
+        <span className={cn(truncate && 'truncate')}>{value}</span>
+      </dd>
+    </div>
+  );
+}
+
 interface PropertyCardProps {
-  producerId: string;
   property: Property;
   canEdit: boolean;
   onEdit: () => void;
 }
 
-/** Card híbrido: dados da matrícula no topo, prévia estática do mapa embaixo. */
-function PropertyCard({ producerId, property, canEdit, onEdit }: PropertyCardProps) {
+/** Card híbrido: dados da matrícula no topo, prévia do mapa preenchendo o restante. */
+function PropertyCard({ property, canEdit, onEdit }: PropertyCardProps) {
   const point =
     property.latitude && property.longitude
       ? { lat: Number(property.latitude), lng: Number(property.longitude) }
@@ -189,12 +265,14 @@ function PropertyCard({ producerId, property, canEdit, onEdit }: PropertyCardPro
   const hasLocation = !!property.boundary || !!point;
 
   return (
-    <div className="overflow-hidden rounded-lg border border-border transition-colors hover:border-accent/40">
-      <div className="p-4">
+    <div className="flex min-h-[280px] flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-[0_1px_3px_rgba(34,31,23,0.05)] transition-colors hover:border-accent/40">
+      <div className="shrink-0 p-4">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <p className="truncate text-sm font-medium text-text">{property.name}</p>
-            <p className="text-xs text-text-secondary">
+            <p className="truncate font-display text-sm font-semibold tracking-tight text-text">
+              {property.name}
+            </p>
+            <p className="mt-0.5 text-xs text-text-secondary">
               Matrícula {property.registrationNumber} · {property.city}-{property.state}
             </p>
           </div>
@@ -209,31 +287,30 @@ function PropertyCard({ producerId, property, canEdit, onEdit }: PropertyCardPro
             </button>
           )}
         </div>
-        <p className="mt-2 text-xs text-text-secondary">
-          Área total: {formatNumber(property.totalAreaHectares)} ha
-          {property.boundaryAreaHectares &&
-            ` · demarcada: ${formatNumber(property.boundaryAreaHectares)} ha`}
+        <p className="mt-3 text-xs text-text-secondary">
+          <span className="font-medium text-text">
+            {formatNumber(property.totalAreaHectares)} ha
+          </span>
+          {property.boundaryAreaHectares && (
+            <> · demarcada: {formatNumber(property.boundaryAreaHectares)} ha</>
+          )}
         </p>
       </div>
 
       {hasLocation ? (
-        <LocationMapField boundary={property.boundary} point={point} height={140} compact />
+        <LocationMapField
+          boundary={property.boundary}
+          point={point}
+          height="100%"
+          compact
+          className="min-h-[180px] flex-1"
+        />
       ) : (
-        <div className="flex h-[140px] items-center justify-center gap-1.5 border-t border-border bg-bg-subtle text-xs text-text-tertiary">
+        <div className="flex min-h-[160px] flex-1 items-center justify-center gap-1.5 border-t border-border bg-bg-subtle text-xs text-text-tertiary">
           <MapPin className="h-3.5 w-3.5" />
           Sem localização cadastrada
         </div>
       )}
-
-      <div className="p-4 pt-3">
-        <Link
-          to={`/projects/new?producerId=${producerId}&propertyId=${property.id}`}
-          className={buttonVariants('outline', 'sm') + ' w-full'}
-        >
-          <Sprout className="h-3.5 w-3.5" />
-          Emitir projeto
-        </Link>
-      </div>
     </div>
   );
 }

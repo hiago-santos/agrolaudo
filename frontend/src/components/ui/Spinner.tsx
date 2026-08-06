@@ -1,7 +1,7 @@
-import { Loader2 } from 'lucide-react';
+import { CircleNotch } from '@phosphor-icons/react';
 
 import { cn } from '@/lib/cn';
 
 export function Spinner({ className }: { className?: string }) {
-  return <Loader2 className={cn('h-4 w-4 animate-spin text-accent', className)} />;
+  return <CircleNotch className={cn('h-4 w-4 animate-spin text-accent', className)} />;
 }

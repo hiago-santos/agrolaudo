@@ -32,7 +32,9 @@ export function VerifyPublic() {
     <div className="flex min-h-screen flex-col items-center bg-bg px-4 py-10">
       <div className="mb-8 flex flex-col items-center gap-1 text-center">
         <Seal size="md" />
-        <h1 className="mt-3 font-display text-lg font-semibold text-text">AgroLaudo</h1>
+        <h1 className="mt-4 font-display text-2xl font-semibold tracking-tight text-text">
+          AgroLaudo
+        </h1>
         <p className="text-sm text-text-secondary">Verificação de autenticidade de documento</p>
       </div>
 

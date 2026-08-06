@@ -1,11 +1,12 @@
-import { ChevronLeft, ChevronRight, FilePlus2, FileStack, Landmark, Search } from 'lucide-react';
+import { ChevronLeft, ChevronRight, FilePlus2, FileStack, Landmark, Search, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
+import { DeleteProjectDialog } from '@/components/project/DeleteProjectDialog';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { Badge } from '@/components/ui/Badge';
 import { Button, buttonVariants } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { CompactCurrency, CompactDate, CompactName, CompactStatus } from '@/components/ui/Compact';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Input, Select } from '@/components/ui/Input';
 import { SkeletonTable } from '@/components/ui/Skeleton';
@@ -17,8 +18,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/Table';
-import { formatCurrency, formatDate } from '@/lib/format';
-import { PROJECT_STATUS_LABEL, PROJECT_STATUS_TONE } from '@/lib/projectStatus';
+import { ApiError } from '@/lib/api';
+import { PROJECT_STATUS_LABEL } from '@/lib/projectStatus';
 import { agronomistsService } from '@/services/agronomists';
 import { producersService } from '@/services/producers';
 import { projectsService } from '@/services/projects';
@@ -31,6 +32,7 @@ const PAGE_SIZE = 15;
 
 export function Projects() {
   const canCreate = useAuthStore((s) => s.hasRole('ADMIN', 'AGRONOMIST'));
+  const canDelete = canCreate;
   const canInitiate = useAuthStore((s) => s.hasRole('BANK'));
 
   const [search, setSearch] = useState('');
@@ -43,6 +45,8 @@ export function Projects() {
   const [items, setItems] = useState<ProjectSummary[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [deleteTarget, setDeleteTarget] = useState<ProjectSummary | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const [producers, setProducers] = useState<Producer[]>([]);
   const [seasons, setSeasons] = useState<Season[]>([]);
@@ -95,6 +99,21 @@ export function Projects() {
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const hasFilters = !!(search || status || producerId || seasonId || agronomistId);
+
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      await projectsService.remove(deleteTarget.id);
+      toast.success(`Projeto ${deleteTarget.number} excluído.`);
+      setDeleteTarget(null);
+      await load();
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : 'Não foi possível excluir o projeto.');
+    } finally {
+      setDeleting(false);
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -194,43 +213,58 @@ export function Projects() {
           </div>
         ) : (
           <>
-            <Table className="min-w-[720px]">
+            <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Número</TableHead>
-                  <TableHead>Produtor</TableHead>
-                  <TableHead>Propriedade</TableHead>
-                  <TableHead>Safra</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Faturamento</TableHead>
-                  <TableHead>Emitido em</TableHead>
+                  <TableHead className="w-[18%] sm:w-[16%]">Nº</TableHead>
+                  <TableHead className="w-[24%] sm:w-[20%]">Produtor</TableHead>
+                  <TableHead className="hidden w-[16%] md:table-cell">Propriedade</TableHead>
+                  <TableHead className="hidden w-[10%] lg:table-cell">Safra</TableHead>
+                  <TableHead className="w-[22%] sm:w-[18%]">Status</TableHead>
+                  <TableHead className="w-[18%] text-right sm:w-[14%]">Fat.</TableHead>
+                  <TableHead className="hidden w-[10%] sm:table-cell">Data</TableHead>
+                  {canDelete && <TableHead className="w-10" />}
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {items.map((project) => (
-                  <TableRow key={project.id}>
-                    <TableCell className="font-medium">
-                      <Link
-                        to={`/projects/${project.id}`}
-                        className="rounded-sm transition-colors hover:text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring"
-                      >
-                        {project.number}
-                      </Link>
+                  <TableRow key={project.id} to={`/projects/${project.id}`}>
+                    <TableCell className="font-medium" title={project.number}>
+                      {project.number}
                     </TableCell>
-                    <TableCell>{project.producer.name}</TableCell>
-                    <TableCell className="text-text-secondary">{project.property.name}</TableCell>
-                    <TableCell className="text-text-secondary">{project.season.label}</TableCell>
                     <TableCell>
-                      <Badge tone={PROJECT_STATUS_TONE[project.status]}>
-                        {PROJECT_STATUS_LABEL[project.status]}
-                      </Badge>
+                      <CompactName name={project.producer.name} />
+                    </TableCell>
+                    <TableCell className="hidden text-text-secondary md:table-cell">
+                      {project.property.name}
+                    </TableCell>
+                    <TableCell className="hidden text-text-secondary lg:table-cell">
+                      {project.season.label}
+                    </TableCell>
+                    <TableCell>
+                      <CompactStatus status={project.status} />
                     </TableCell>
                     <TableCell className="text-right font-mono font-medium tabular-nums">
-                      {formatCurrency(project.totalRevenue)}
+                      <CompactCurrency value={project.totalRevenue} />
                     </TableCell>
-                    <TableCell className="text-text-secondary">
-                      {formatDate(project.createdAt)}
+                    <TableCell className="hidden text-text-secondary sm:table-cell">
+                      <CompactDate value={project.createdAt} />
                     </TableCell>
+                    {canDelete && (
+                      <TableCell className="px-1 text-right sm:px-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          aria-label={`Excluir ${project.number}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteTarget(project);
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4 text-danger" />
+                        </Button>
+                      </TableCell>
+                    )}
                   </TableRow>
                 ))}
               </TableBody>
@@ -264,6 +298,14 @@ export function Projects() {
           </>
         )}
       </Card>
+
+      <DeleteProjectDialog
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        projectNumber={deleteTarget?.number ?? ''}
+        loading={deleting}
+        onConfirm={() => void confirmDelete()}
+      />
     </div>
   );
 }

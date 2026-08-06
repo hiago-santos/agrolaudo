@@ -9,8 +9,19 @@ import {
   type MapEvent,
   type MapMouseEvent,
 } from '@vis.gl/react-google-maps';
-import { Check, Crosshair, Loader2, Maximize2, PenLine, Search, Trash2, Undo2 } from 'lucide-react';
-import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import {
+  ArrowsOut,
+  ArrowUUpLeft,
+  Check,
+  CircleNotch,
+  Crosshair,
+  MagnifyingGlass,
+  Minus,
+  PenNib,
+  Plus,
+  Trash,
+} from '@phosphor-icons/react';
+import { useEffect, useId, useMemo, useRef, useState, type ButtonHTMLAttributes } from 'react';
 
 import { Button } from '@/components/ui/Button';
 import { Input, Label } from '@/components/ui/Input';
@@ -32,6 +43,14 @@ import type { GeoPolygon } from '@/types/domain';
 /** Centro geográfico aproximado do Brasil — só usado quando não há nada pra enquadrar. */
 const FALLBACK_CENTER: LatLng = { lat: -15.78, lng: -47.93 };
 
+type MapLayer = 'hybrid' | 'satellite' | 'roadmap';
+
+const MAP_LAYERS: { id: MapLayer; label: string }[] = [
+  { id: 'roadmap', label: 'Mapa' },
+  { id: 'hybrid', label: 'Híbrido' },
+  { id: 'satellite', label: 'Satélite' },
+];
+
 /**
  * Lê uma cor do tema (custom property de `index.css`) já resolvida — os overlays do
  * Google Maps são desenhados em canvas/SVG fora da árvore de estilos do React e não
@@ -48,6 +67,89 @@ function useThemeColor(variable: string, fallback: string): string {
   return color;
 }
 
+function MapControlButton({
+  className,
+  active,
+  ...props
+}: ButtonHTMLAttributes<HTMLButtonElement> & { active?: boolean }) {
+  return (
+    <button
+      type="button"
+      className={cn(
+        'inline-flex h-8 w-8 items-center justify-center text-text transition-colors',
+        'hover:bg-bg-subtle active:bg-border/40',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ring',
+        'disabled:pointer-events-none disabled:opacity-40',
+        active && 'bg-accent-soft text-accent',
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
+/** Controles próprios — zoom, camada e enquadrar. Substitui a UI padrão do Google. */
+function MapChrome({
+  map,
+  layer,
+  onLayerChange,
+  canFit,
+  onFit,
+}: {
+  map: google.maps.Map | null;
+  layer: MapLayer;
+  onLayerChange: (layer: MapLayer) => void;
+  canFit: boolean;
+  onFit: () => void;
+}) {
+  function zoomBy(delta: number) {
+    if (!map) return;
+    const current = map.getZoom() ?? 14;
+    map.setZoom(Math.min(21, Math.max(3, current + delta)));
+  }
+
+  return (
+    <div className="pointer-events-none absolute inset-0 z-[1] p-2.5">
+      <div className="pointer-events-auto absolute right-2.5 top-2.5 flex flex-col overflow-hidden rounded-md border border-border/80 bg-surface/95 shadow-[0_1px_3px_rgba(34,31,23,0.12)] backdrop-blur-sm">
+        <MapControlButton aria-label="Aumentar zoom" onClick={() => zoomBy(1)} disabled={!map}>
+          <Plus className="h-3.5 w-3.5" weight="bold" />
+        </MapControlButton>
+        <div className="h-px bg-border" />
+        <MapControlButton aria-label="Diminuir zoom" onClick={() => zoomBy(-1)} disabled={!map}>
+          <Minus className="h-3.5 w-3.5" weight="bold" />
+        </MapControlButton>
+        {canFit && (
+          <>
+            <div className="h-px bg-border" />
+            <MapControlButton aria-label="Enquadrar área" onClick={onFit} disabled={!map}>
+              <ArrowsOut className="h-3.5 w-3.5" />
+            </MapControlButton>
+          </>
+        )}
+      </div>
+
+      <div className="pointer-events-auto absolute bottom-2.5 left-2.5 flex overflow-hidden rounded-md border border-border/80 bg-surface/95 shadow-[0_1px_3px_rgba(34,31,23,0.12)] backdrop-blur-sm">
+        {MAP_LAYERS.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => onLayerChange(item.id)}
+            className={cn(
+              'px-2.5 py-1.5 text-[11px] font-medium tracking-wide transition-colors',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-ring',
+              layer === item.id
+                ? 'bg-accent text-accent-contrast'
+                : 'text-text-secondary hover:bg-bg-subtle hover:text-text',
+            )}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export interface LocationMapFieldProps {
   /** Contorno principal — omitir `onBoundaryChange` deixa o campo só-leitura. */
   boundary: GeoPolygon | null;
@@ -61,6 +163,11 @@ export interface LocationMapFieldProps {
   point?: LatLng | null;
   onPointChange?: (point: LatLng | null) => void;
   pointLabel?: string;
+  /**
+   * Quando `false`, o ponto continua sincronizado via props/callbacks, mas os campos
+   * de lat/lng ficam a cargo do formulário pai (ex.: coluna de dados da fazenda).
+   */
+  showPointFields?: boolean;
   /** Contorno auxiliar somente-leitura (ex.: a propriedade inteira, ao desenhar a área financiada). */
   referenceBoundary?: GeoPolygon | null;
   referenceLabel?: string;
@@ -114,6 +221,7 @@ function MapField({
   point,
   onPointChange,
   pointLabel = 'Referência de localização',
+  showPointFields = true,
   center,
   height,
   referenceBoundary,
@@ -127,10 +235,19 @@ function MapField({
 
   const apiLoaded = useApiIsLoaded();
   const geocodingLib = useMapsLibrary('geocoding');
-  const drawnColor = useThemeColor('--accent', '#3f7d5c');
-  const referenceColor = useThemeColor('--gold', '#e2c675');
+  // Verde menta no satélite — contraste com vegetação, sem o tom amarelado do limão.
+  const drawnColor = useThemeColor('--map-boundary', '#00f0a0');
+  const drawnHalo = useThemeColor('--map-boundary-halo', '#0b1220');
+  const referenceColor = useThemeColor('--map-reference', '#ffbf1a');
+  const referenceHalo = useThemeColor('--map-reference-halo', '#0b1220');
+
+  // Miniaturas: traço fino sem halo grosso pra não cobrir o contorno.
+  const stroke = compact
+    ? { drawn: 1.5, drawnHalo: 0, reference: 1.25, referenceHalo: 0, fill: 0.22, marker: 4 }
+    : { drawn: 2.5, drawnHalo: 5, reference: 2, referenceHalo: 4, fill: 0.28, marker: 6 };
 
   const [map, setMap] = useState<google.maps.Map | null>(null);
+  const [mapLayer, setMapLayer] = useState<MapLayer>('hybrid');
   const [polygonInstance, setPolygonInstance] = useState<google.maps.Polygon | null>(null);
   const [path, setPath] = useState<LatLng[]>(() => polygonToPath(boundary));
   const [drawing, setDrawing] = useState(() => editable && polygonToPath(boundary).length < 3);
@@ -194,6 +311,8 @@ function MapField({
   useEffect(() => {
     latest.current = { path, commitBoundary };
   });
+  /** Evita que o clique de remoção de vértice vire um clique de adição no mapa. */
+  const suppressMapClick = useRef(false);
 
   function fitTo(target: LatLng[]) {
     if (!map || target.length === 0) return;
@@ -214,23 +333,55 @@ function MapField({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map, path, referencePath]);
 
-  // Clique direito num vértice remove aquele vértice (a API nativa não faz isso sozinha).
+  // Clique num vértice remove o ponto (sem arrastar). Clique direito continua
+  // fazendo o mesmo — a API nativa não oferece remoção sozinha.
   useEffect(() => {
     if (!polygonInstance || !editable) return;
-    const listener = polygonInstance.addListener(
-      'rightclick',
-      (event: google.maps.PolyMouseEvent) => {
-        if (event.vertex === undefined) return;
-        const { path: currentPath, commitBoundary: commit } = latest.current;
-        commit(currentPath.filter((_, index) => index !== event.vertex));
-      },
-    );
-    return () => listener.remove();
+
+    let moved = false;
+    const ring = polygonInstance.getPath();
+
+    const markMoved = () => {
+      moved = true;
+    };
+    const onSetAt = ring.addListener('set_at', markMoved);
+    const onInsertAt = ring.addListener('insert_at', markMoved);
+    const onMouseDown = polygonInstance.addListener('mousedown', () => {
+      moved = false;
+    });
+
+    function removeVertex(event: google.maps.PolyMouseEvent) {
+      if (event.vertex === undefined) return;
+      if (moved) return;
+      suppressMapClick.current = true;
+      const { path: currentPath, commitBoundary: commit } = latest.current;
+      commit(currentPath.filter((_, index) => index !== event.vertex));
+    }
+
+    const onClick = polygonInstance.addListener('click', removeVertex);
+    const onRightClick = polygonInstance.addListener('rightclick', removeVertex);
+
+    return () => {
+      onSetAt.remove();
+      onInsertAt.remove();
+      onMouseDown.remove();
+      onClick.remove();
+      onRightClick.remove();
+    };
   }, [polygonInstance, editable]);
 
   function handleMapClick(event: MapMouseEvent) {
+    if (suppressMapClick.current) {
+      suppressMapClick.current = false;
+      return;
+    }
     if (!editable || !drawing || !event.detail.latLng) return;
     commitBoundary([...path, event.detail.latLng]);
+  }
+
+  function removePathVertex(index: number) {
+    suppressMapClick.current = true;
+    commitBoundary(path.filter((_, i) => i !== index));
   }
 
   function handlePathsChanged(paths: google.maps.LatLng[][]) {
@@ -297,17 +448,18 @@ function MapField({
   const initialZoom = center || path.length > 0 || referencePath.length > 0 ? 14 : 4;
 
   return (
-    <div className={cn(!compact && 'space-y-2', className)}>
+    <div className={cn(!compact && 'space-y-2', height === '100%' && 'flex h-full min-h-0 flex-col', className)}>
       <div
         className={cn(
           'overflow-hidden',
           compact ? 'border-t border-border' : 'rounded-lg border border-border',
+          height === '100%' && 'flex min-h-0 flex-1 flex-col',
         )}
       >
         {editable && (
           <div className="flex flex-wrap items-center gap-2 border-b border-border bg-bg-subtle px-3 py-2">
             <div className="relative min-w-[12rem] flex-1">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-text-tertiary" />
+              <MagnifyingGlass className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-text-tertiary" />
               <Input
                 value={search}
                 onChange={(event) => {
@@ -326,7 +478,11 @@ function MapField({
               />
             </div>
             <Button type="button" variant="outline" size="sm" onClick={() => void runSearch()}>
-              {searching ? <Spinner className="h-3.5 w-3.5" /> : <Search className="h-3.5 w-3.5" />}
+              {searching ? (
+                <Spinner className="h-3.5 w-3.5" />
+              ) : (
+                <MagnifyingGlass className="h-3.5 w-3.5" />
+              )}
               Buscar
             </Button>
             <Button
@@ -342,40 +498,36 @@ function MapField({
                 </>
               ) : (
                 <>
-                  <PenLine className="h-3.5 w-3.5" />
+                  <PenNib className="h-3.5 w-3.5" />
                   {drawing ? 'Desenhando' : 'Desenhar'}
                 </>
               )}
             </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={!hasShape && referencePath.length < 3}
-              onClick={() => fitTo(hasShape ? path : referencePath)}
-            >
-              <Maximize2 className="h-3.5 w-3.5" />
-              Enquadrar
-            </Button>
           </div>
         )}
 
-        <div style={{ height }} className="relative">
+        <div
+          style={{ height }}
+          className={cn('relative', height === '100%' && 'min-h-0 flex-1')}
+        >
           {!apiLoaded && (
             <div className="absolute inset-0 z-10 flex items-center justify-center gap-2 bg-bg-subtle text-xs text-text-tertiary">
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <CircleNotch className="h-4 w-4 animate-spin" />
               Carregando mapa...
             </div>
           )}
           <Map
             defaultCenter={initialCenter}
             defaultZoom={initialZoom}
-            mapTypeId="hybrid"
+            mapTypeId={mapLayer}
             gestureHandling={compact ? 'none' : 'greedy'}
+            disableDefaultUI
             streetViewControl={false}
-            fullscreenControl={!compact}
-            mapTypeControl={!compact}
-            zoomControl={!compact}
+            fullscreenControl={false}
+            mapTypeControl={false}
+            zoomControl={false}
+            scaleControl={false}
+            rotateControl={false}
             keyboardShortcuts={!compact}
             clickableIcons={false}
             draggableCursor={editable && drawing ? 'crosshair' : undefined}
@@ -383,33 +535,94 @@ function MapField({
             onClick={handleMapClick}
           >
             {referencePath.length >= 3 && (
-              <Polygon
-                paths={referencePath}
-                clickable={false}
-                strokeColor={referenceColor}
-                strokeOpacity={0.9}
-                strokeWeight={2}
-                fillOpacity={0}
-              />
+              <>
+                {stroke.referenceHalo > 0 && (
+                  <Polygon
+                    paths={referencePath}
+                    clickable={false}
+                    strokeColor={referenceHalo}
+                    strokeOpacity={0.85}
+                    strokeWeight={stroke.referenceHalo}
+                    fillOpacity={0}
+                  />
+                )}
+                <Polygon
+                  paths={referencePath}
+                  clickable={false}
+                  strokeColor={referenceColor}
+                  strokeOpacity={1}
+                  strokeWeight={stroke.reference}
+                  fillOpacity={0}
+                />
+              </>
             )}
 
             {hasShape && (
-              <Polygon
-                ref={setPolygonInstance}
-                paths={path}
-                editable={editable}
-                onPathsChanged={editable ? handlePathsChanged : undefined}
-                strokeColor={drawnColor}
-                strokeWeight={2}
-                fillColor={drawnColor}
-                fillOpacity={0.25}
-              />
+              <>
+                {stroke.drawnHalo > 0 && (
+                  <Polygon
+                    paths={path}
+                    clickable={false}
+                    strokeColor={drawnHalo}
+                    strokeOpacity={0.9}
+                    strokeWeight={stroke.drawnHalo}
+                    fillOpacity={0}
+                  />
+                )}
+                <Polygon
+                  ref={setPolygonInstance}
+                  paths={path}
+                  editable={editable}
+                  onPathsChanged={editable ? handlePathsChanged : undefined}
+                  strokeColor={drawnColor}
+                  strokeOpacity={1}
+                  strokeWeight={stroke.drawn}
+                  fillColor={drawnColor}
+                  fillOpacity={stroke.fill}
+                />
+              </>
             )}
 
             {/* Traço parcial enquanto ainda não há vértices suficientes pra fechar a área. */}
             {!hasShape && path.length > 0 && (
-              <Polyline path={path} strokeColor={drawnColor} strokeWeight={2} />
+              <>
+                {stroke.drawnHalo > 0 && (
+                  <Polyline
+                    path={path}
+                    strokeColor={drawnHalo}
+                    strokeOpacity={0.9}
+                    strokeWeight={stroke.drawnHalo}
+                  />
+                )}
+                <Polyline
+                  path={path}
+                  strokeColor={drawnColor}
+                  strokeOpacity={1}
+                  strokeWeight={stroke.drawn}
+                />
+              </>
             )}
+
+            {/* Vértices clicáveis no traço parcial (antes de fechar o polígono). */}
+            {editable &&
+              !hasShape &&
+              path.map((vertex, index) => (
+                <Marker
+                  key={`vertex-${index}-${vertex.lat}-${vertex.lng}`}
+                  position={vertex}
+                  title="Clique para remover"
+                  zIndex={10}
+                  onClick={() => removePathVertex(index)}
+                  icon={{
+                    path: google.maps.SymbolPath.CIRCLE,
+                    scale: 6,
+                    fillColor: drawnColor,
+                    fillOpacity: 1,
+                    strokeColor: '#ffffff',
+                    strokeWeight: 2,
+                  }}
+                />
+              ))}
 
             {apiLoaded && displayedPoint && (
               <Marker
@@ -419,15 +632,25 @@ function MapField({
                 zIndex={5}
                 icon={{
                   path: google.maps.SymbolPath.CIRCLE,
-                  scale: 5,
-                  fillColor: '#ffffff',
+                  scale: stroke.marker,
+                  fillColor: drawnColor,
                   fillOpacity: 1,
-                  strokeColor: drawnColor,
-                  strokeWeight: 3,
+                  strokeColor: '#ffffff',
+                  strokeWeight: compact ? 1.5 : 2,
                 }}
               />
             )}
           </Map>
+
+          {!compact && (
+            <MapChrome
+              map={map}
+              layer={mapLayer}
+              onLayerChange={setMapLayer}
+              canFit={hasShape || referencePath.length >= 3}
+              onFit={() => fitTo(hasShape ? path : referencePath)}
+            />
+          )}
         </div>
       </div>
 
@@ -463,16 +686,10 @@ function MapField({
                 <p className="flex items-center gap-1.5 text-[11px] text-text-tertiary">
                   <span
                     aria-hidden
-                    className="inline-block h-2 w-3 shrink-0 rounded-sm border"
-                    style={{ borderColor: referenceColor }}
+                    className="inline-block h-2 w-3 shrink-0 rounded-sm border-2"
+                    style={{ borderColor: referenceColor, backgroundColor: 'transparent' }}
                   />
                   {referenceLabel}
-                </p>
-              )}
-
-              {editable && hasShape && (
-                <p className="text-[11px] text-text-tertiary">
-                  Arraste as alças para ajustar · clique direito num vértice para removê-lo.
                 </p>
               )}
             </div>
@@ -485,18 +702,18 @@ function MapField({
                   size="sm"
                   onClick={() => commitBoundary(path.slice(0, -1))}
                 >
-                  <Undo2 className="h-3.5 w-3.5" />
+                  <ArrowUUpLeft className="h-3.5 w-3.5" />
                   Desfazer ponto
                 </Button>
                 <Button type="button" variant="ghost" size="sm" onClick={() => commitBoundary([])}>
-                  <Trash2 className="h-3.5 w-3.5" />
+                  <Trash className="h-3.5 w-3.5" />
                   Limpar
                 </Button>
               </div>
             )}
           </div>
 
-          {pointEditable && (
+          {pointEditable && showPointFields && (
             <div className="grid grid-cols-2 gap-3 rounded-lg border border-border bg-bg-subtle/60 p-3">
               <div>
                 <Label htmlFor={`${inputId}-lat`}>Latitude</Label>

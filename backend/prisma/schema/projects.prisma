@@ -1,6 +1,7 @@
 // ─────────────────────────── Projeto ───────────────────────────
 
 /// BANK_INITIATED -> DRAFT -> PENDING_SIGNATURES -> SIGNED -> UNDER_BANK_REVIEW -> APPROVED | REJECTED
+/// UNDER_BANK_REVIEW <-> AWAITING_PRODUCER_INFO (projeto em ajuste — agrônomo/banco editam e reenviam)
 /// BANK_INITIATED é opcional — só existe quando o projeto nasce como "casca" aberta pelo banco
 /// (produtor+propriedade+área financiada, sem atividades ainda). Nesse caso o agrônomo completa
 /// as atividades depois e o projeto migra pra DRAFT (ver projects.service.ts updateProject).
@@ -11,9 +12,20 @@ enum ProjectStatus {
   PENDING_SIGNATURES
   SIGNED
   UNDER_BANK_REVIEW
+  AWAITING_PRODUCER_INFO
   APPROVED
   REJECTED
   CANCELLED
+}
+
+enum ProjectMessageKind {
+  BANK_REQUEST
+  PRODUCER_REPLY
+}
+
+enum ProjectAttachmentSide {
+  PRODUCER
+  BANK
 }
 
 enum SignatureType {
@@ -85,8 +97,14 @@ model Project {
   bankReviewer        User?     @relation("BankReviewer", fields: [bankReviewedById], references: [id])
   bankReviewedAt      DateTime? @map("bank_reviewed_at")
 
+  /// Token opaco para o produtor visualizar o projeto via link público (/project/:id).
+  producerAccessToken          String?   @unique @map("producer_access_token")
+  producerAccessTokenExpiresAt DateTime? @map("producer_access_token_expires_at")
+
   items      ProjectItem[]
   signatures Signature[]
+  messages     ProjectMessage[]
+  attachments  ProjectAttachment[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -151,4 +169,41 @@ model Signature {
 
   @@index([projectId])
   @@map("signatures")
+}
+
+/// Histórico de pedidos de complemento (banco) e respostas (produtor via link público).
+model ProjectMessage {
+  id           String             @id @default(uuid(7)) @db.Uuid
+  projectId    String             @map("project_id") @db.Uuid
+  project      Project            @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  kind         ProjectMessageKind
+  body         String
+  authorName   String             @map("author_name")
+  authorUserId String?            @map("author_user_id") @db.Uuid
+  authorUser   User?              @relation("ProjectMessageAuthor", fields: [authorUserId], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([projectId])
+  @@map("project_messages")
+}
+
+/// Arquivo anexado ao projeto — organizado por lado (produtor ou banco), armazenado no MinIO.
+model ProjectAttachment {
+  id           String                @id @default(uuid(7)) @db.Uuid
+  projectId    String                @map("project_id") @db.Uuid
+  project      Project               @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  side         ProjectAttachmentSide
+  fileName     String                @map("file_name")
+  contentType  String                @map("content_type")
+  sizeBytes    Int                   @map("size_bytes")
+  objectKey    String                @unique @map("object_key")
+  uploadedById String                @map("uploaded_by_id") @db.Uuid
+  uploadedBy   User                  @relation("ProjectAttachmentUploader", fields: [uploadedById], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([projectId])
+  @@index([projectId, side])
+  @@map("project_attachments")
 }

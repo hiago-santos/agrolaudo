@@ -14,10 +14,31 @@ export type ProjectStatus =
   | 'PENDING_SIGNATURES'
   | 'SIGNED'
   | 'UNDER_BANK_REVIEW'
+  | 'AWAITING_PRODUCER_INFO'
   | 'APPROVED'
   | 'REJECTED'
   | 'CANCELLED';
 export type SignatureType = 'AGRONOMIST' | 'PRODUCER';
+export type ProjectMessageKind = 'BANK_REQUEST' | 'PRODUCER_REPLY';
+export type ProjectAttachmentSide = 'PRODUCER' | 'BANK';
+
+export interface ProjectAttachment {
+  id: string;
+  side: ProjectAttachmentSide;
+  fileName: string;
+  contentType: string;
+  sizeBytes: number;
+  createdAt: string;
+  uploadedBy: { id: string; name: string; role: UserRole };
+}
+
+export interface ProjectMessage {
+  id: string;
+  kind: ProjectMessageKind;
+  body: string;
+  authorName: string;
+  createdAt: string;
+}
 
 export interface Agronomist {
   id: string;
@@ -162,8 +183,11 @@ export interface Project extends ProjectSummary {
   financedAreaBoundary: GeoPolygon | null;
   financedAreaHectares: string | null;
   initiatedBy: { id: string; name: string; email: string } | null;
+  producerAccessToken: string | null;
+  producerAccessTokenExpiresAt: string | null;
   items: ProjectItem[];
   signatures: Signature[];
+  messages: ProjectMessage[];
 }
 
 export interface CalculatedProjectItem {

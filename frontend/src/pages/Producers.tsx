@@ -1,12 +1,12 @@
-import { Plus, Search, Users } from 'lucide-react';
+import { MagnifyingGlass, Plus, Users } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 
 import { ProducerFormDialog } from '@/components/producers/ProducerFormDialog';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { CompactName } from '@/components/ui/Compact';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Input } from '@/components/ui/Input';
 import { SkeletonTable } from '@/components/ui/Skeleton';
@@ -73,7 +73,7 @@ export function Producers() {
       />
 
       <div className="relative max-w-sm">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-tertiary" />
+        <MagnifyingGlass className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-tertiary" />
         <Input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -101,32 +101,32 @@ export function Producers() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Nome</TableHead>
-                <TableHead>CPF/CNPJ</TableHead>
-                <TableHead>Município</TableHead>
-                <TableHead>Classificação</TableHead>
-                <TableHead className="text-right">Propriedades</TableHead>
+                <TableHead className="w-[40%] sm:w-[28%]">Nome</TableHead>
+                <TableHead className="hidden w-[22%] sm:table-cell">CPF/CNPJ</TableHead>
+                <TableHead className="w-[35%] sm:w-[22%]">Município</TableHead>
+                <TableHead className="hidden w-[18%] md:table-cell">Classe</TableHead>
+                <TableHead className="hidden w-[10%] text-right lg:table-cell">Props.</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {producers.map((producer) => (
-                <TableRow key={producer.id}>
+                <TableRow key={producer.id} to={`/producers/${producer.id}`}>
                   <TableCell className="font-medium">
-                    <Link
-                      to={`/producers/${producer.id}`}
-                      className="rounded-sm transition-colors hover:text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring"
-                    >
-                      {producer.name}
-                    </Link>
+                    <CompactName name={producer.name} />
                   </TableCell>
-                  <TableCell className="text-text-secondary">{producer.taxId}</TableCell>
+                  <TableCell className="hidden text-text-secondary sm:table-cell">
+                    {producer.taxId}
+                  </TableCell>
                   <TableCell className="text-text-secondary">
-                    {producer.city}-{producer.state}
+                    <span className="md:hidden">{producer.city}</span>
+                    <span className="hidden md:inline">
+                      {producer.city}-{producer.state}
+                    </span>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="hidden md:table-cell">
                     <Badge tone="accent">{CLASSIFICATION_LABEL[producer.classification]}</Badge>
                   </TableCell>
-                  <TableCell className="text-right text-text-secondary">
+                  <TableCell className="hidden text-right text-text-secondary lg:table-cell">
                     {producer.properties.length}
                   </TableCell>
                 </TableRow>

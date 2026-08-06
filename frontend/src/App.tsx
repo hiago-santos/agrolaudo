@@ -11,6 +11,8 @@ import { NewProject } from '@/pages/NewProject';
 import { Prices } from '@/pages/Prices';
 import { ProducerDetail } from '@/pages/ProducerDetail';
 import { Producers } from '@/pages/Producers';
+import { ProjectPublicView } from '@/pages/ProjectPublicView';
+import { AdjustProject } from '@/pages/AdjustProject';
 import { ProjectDetail } from '@/pages/ProjectDetail';
 import { Projects } from '@/pages/Projects';
 import { SignPublic } from '@/pages/SignPublic';
@@ -27,6 +29,7 @@ export function App() {
 
         {/* Rotas públicas — sem login, protegidas por token ou apenas informativas. */}
         <Route path="/sign/:projectId" element={<SignPublic />} />
+        <Route path="/project/:projectId" element={<ProjectPublicView />} />
         <Route path="/verify/:hash" element={<VerifyPublic />} />
 
         <Route
@@ -58,6 +61,14 @@ export function App() {
             element={
               <RequireRole roles={['ADMIN', 'AGRONOMIST']}>
                 <CompleteProject />
+              </RequireRole>
+            }
+          />
+          <Route
+            path="/projects/:id/adjust"
+            element={
+              <RequireRole roles={['ADMIN', 'AGRONOMIST', 'BANK']}>
+                <AdjustProject />
               </RequireRole>
             }
           />

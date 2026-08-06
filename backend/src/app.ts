@@ -20,6 +20,7 @@ import authRoutes from './routes/auth.routes.js';
 import dashboardRoutes from './routes/dashboard.routes.js';
 import priceQuotesRoutes from './routes/price-quotes.routes.js';
 import producersRoutes from './routes/producers.routes.js';
+import projectAttachmentsRoutes from './routes/projectAttachments.routes.js';
 import projectsRoutes from './routes/projects.routes.js';
 import propertiesRoutes from './routes/properties.routes.js';
 import publicRoutes from './routes/public.routes.js';
@@ -63,7 +64,9 @@ export function buildApp(env: Env) {
     exposedHeaders: ['Content-Disposition'],
   });
   app.register(rateLimit, { max: 300, timeWindow: '1 minute' });
-  app.register(multipart);
+  app.register(multipart, {
+    limits: { fileSize: 20 * 1024 * 1024 },
+  });
 
   app.register(swagger, {
     openapi: {
@@ -90,8 +93,9 @@ export function buildApp(env: Env) {
   app.register(activitiesRoutes, { prefix: '/activities' });
   app.register(priceQuotesRoutes, { prefix: '/price-quotes' });
   app.register(projectsRoutes, { prefix: '/projects', env });
+  app.register(projectAttachmentsRoutes, { prefix: '/projects', env });
   app.register(signaturesRoutes, { prefix: '/projects', env });
-  app.register(reviewRoutes, { prefix: '/projects' });
+  app.register(reviewRoutes, { prefix: '/projects', env });
   app.register(dashboardRoutes, { prefix: '/dashboard' });
   // Sem app.authenticate — protegido por token (link de assinatura) ou é
   // deliberadamente público (verificação do QR Code).

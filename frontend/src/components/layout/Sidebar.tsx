@@ -1,4 +1,4 @@
-import { FolderOpen, LayoutDashboard, ListChecks, Users, X } from 'lucide-react';
+import { FolderOpen, ListChecks, SquaresFour, Users, X } from '@phosphor-icons/react';
 import { NavLink } from 'react-router-dom';
 
 import { Seal } from '@/components/ui/Seal';
@@ -6,10 +6,10 @@ import { cn } from '@/lib/cn';
 import { useAuthStore } from '@/stores/auth';
 
 export const NAV_ITEMS = [
-  { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
+  { to: '/', label: 'Dashboard', icon: SquaresFour, end: true },
   { to: '/projects', label: 'Projetos', icon: FolderOpen, end: true },
-  { to: '/prices', label: 'Preços & Custos', icon: ListChecks, hideForRoles: ['BANK'] as const },
   { to: '/producers', label: 'Produtores', icon: Users },
+  { to: '/prices', label: 'Preços & Custos', icon: ListChecks, hideForRoles: ['BANK'] as const },
 ];
 
 interface SidebarProps {
@@ -38,12 +38,14 @@ export function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarProps) {
           mobileOpen ? 'translate-x-0' : '-translate-x-full',
         )}
       >
-        <div className="flex items-center justify-between border-b border-border px-5 py-5">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between border-b border-border px-4 py-4">
+          <div className="flex min-w-0 items-center gap-3">
             <Seal size="sm" />
-            <div>
-              <p className="font-display text-sm font-semibold leading-none text-text">AgroLaudo</p>
-              <p className="mt-1 text-[11px] uppercase tracking-widest text-text-tertiary">
+            <div className="min-w-0">
+              <p className="font-display text-lg font-semibold leading-none tracking-tight text-text">
+                AgroLaudo
+              </p>
+              <p className="mt-1.5 text-[10px] font-medium uppercase tracking-[0.14em] text-text-tertiary">
                 Capacidade Pagadora
               </p>
             </div>

@@ -1,4 +1,4 @@
-import { Loader2 } from 'lucide-react';
+import { CircleNotch } from '@phosphor-icons/react';
 import { forwardRef } from 'react';
 import type { ButtonHTMLAttributes } from 'react';
 
@@ -57,7 +57,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         )}
         {...props}
       >
-        {loading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+        {loading && <CircleNotch className="h-3.5 w-3.5 animate-spin" />}
         {children}
       </button>
     );

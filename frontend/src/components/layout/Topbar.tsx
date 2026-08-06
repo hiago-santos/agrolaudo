@@ -1,4 +1,4 @@
-import { ChevronDown, LogOut, Menu, Moon, Sun, User } from 'lucide-react';
+import { CaretDown, List, Moon, SignOut, Sun, User } from '@phosphor-icons/react';
 import { useNavigate } from 'react-router-dom';
 
 import {
@@ -40,7 +40,7 @@ export function Topbar({ onOpenMobileNav }: TopbarProps) {
         className="rounded-md p-2 text-text-secondary transition-colors hover:bg-bg-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring md:hidden"
         aria-label="Abrir menu"
       >
-        <Menu className="h-5 w-5" />
+        <List className="h-5 w-5" />
       </button>
 
       <div className="hidden md:block" />
@@ -71,7 +71,7 @@ export function Topbar({ onOpenMobileNav }: TopbarProps) {
                   {user ? (ROLE_LABEL[user.role] ?? user.role) : ''}
                 </span>
               </span>
-              <ChevronDown className="h-3.5 w-3.5 text-text-tertiary" />
+              <CaretDown className="h-3.5 w-3.5 text-text-tertiary" />
             </>
           }
         >
@@ -80,7 +80,7 @@ export function Topbar({ onOpenMobileNav }: TopbarProps) {
           <DropdownMenuItem
             onSelect={() => void handleLogout()}
             tone="danger"
-            icon={<LogOut className="h-4 w-4" />}
+            icon={<SignOut className="h-4 w-4" />}
           >
             Sair
           </DropdownMenuItem>

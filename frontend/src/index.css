@@ -69,6 +69,12 @@
   --gold: #b8862e;
   --gold-soft: rgba(184, 134, 46, 0.12);
 
+  /* Overlays do mapa híbrido (satélite): verde menta claro — contraste com vegetação, sem tom amarelado. */
+  --map-boundary: #00f0a0;
+  --map-boundary-halo: #0b1220;
+  --map-reference: #ffbf1a;
+  --map-reference-halo: #0b1220;
+
   --success: #1e4d2b;
   --success-soft: rgba(30, 77, 43, 0.1);
   --warning: #b8862e;
@@ -99,6 +105,11 @@
 
   --gold: #d4a84b;
   --gold-soft: rgba(212, 168, 75, 0.14);
+
+  --map-boundary: #00f0a0;
+  --map-boundary-halo: #0b1220;
+  --map-reference: #ffbf1a;
+  --map-reference-halo: #0b1220;
 
   --success: #4ade80;
   --success-soft: rgba(74, 222, 128, 0.12);
@@ -131,6 +142,11 @@
 
     --gold: #d4a84b;
     --gold-soft: rgba(212, 168, 75, 0.14);
+
+    --map-boundary: #00f0a0;
+    --map-boundary-halo: #0b1220;
+    --map-reference: #ffbf1a;
+    --map-reference-halo: #0b1220;
 
     --success: #4ade80;
     --success-soft: rgba(74, 222, 128, 0.12);

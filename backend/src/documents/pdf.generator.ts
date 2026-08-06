@@ -40,6 +40,7 @@ const STATUS_LABELS: Record<string, string> = {
   PENDING_SIGNATURES: 'Aguardando assinatura',
   SIGNED: 'Assinado',
   UNDER_BANK_REVIEW: 'Em análise pelo banco',
+  AWAITING_PRODUCER_INFO: 'Em ajuste',
   APPROVED: 'Aprovado',
   REJECTED: 'Reprovado',
   CANCELLED: 'Cancelado',

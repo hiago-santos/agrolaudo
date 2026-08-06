@@ -7,9 +7,9 @@ interface SealProps {
 }
 
 const SIZE_CLASSES: Record<NonNullable<SealProps['size']>, { outer: string; icon: string }> = {
-  sm: { outer: 'h-8 w-8', icon: 'h-3.5 w-3.5' },
-  md: { outer: 'h-10 w-10', icon: 'h-4 w-4' },
-  lg: { outer: 'h-14 w-14', icon: 'h-6 w-6' },
+  sm: { outer: 'h-10 w-10', icon: 'h-5 w-5' },
+  md: { outer: 'h-12 w-12', icon: 'h-6 w-6' },
+  lg: { outer: 'h-16 w-16', icon: 'h-8 w-8' },
 };
 
 export function Seal({ size = 'md', className }: SealProps) {
@@ -19,13 +19,13 @@ export function Seal({ size = 'md', className }: SealProps) {
     <div
       className={cn(
         'relative flex shrink-0 items-center justify-center rounded-full',
-        'border-2 border-accent bg-accent-soft text-accent',
+        'bg-accent text-accent-contrast',
+        'shadow-[0_2px_8px_rgba(30,77,43,0.28)]',
         sizes.outer,
         className,
       )}
       aria-hidden
     >
-      <div className="absolute inset-[3px] rounded-full border border-accent/40" />
       <GrowthMark className={sizes.icon} />
     </div>
   );

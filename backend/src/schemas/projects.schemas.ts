@@ -53,6 +53,7 @@ export const projectStatusSchema = z.enum([
   'PENDING_SIGNATURES',
   'SIGNED',
   'UNDER_BANK_REVIEW',
+  'AWAITING_PRODUCER_INFO',
   'APPROVED',
   'REJECTED',
   'CANCELLED',

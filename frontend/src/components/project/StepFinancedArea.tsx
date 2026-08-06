@@ -1,4 +1,4 @@
-import { Landmark } from 'lucide-react';
+import { Bank } from '@phosphor-icons/react';
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -86,7 +86,7 @@ export function StepFinancedArea({ draft, onChange, onBack }: StepFinancedAreaPr
     <div className="space-y-6">
       <Card className="space-y-3 p-5">
         <div className="flex items-center gap-2">
-          <Landmark className="h-4 w-4 text-accent" />
+          <Bank className="h-4 w-4 text-accent" />
           <p className="text-sm font-semibold text-text">Área financiada</p>
         </div>
         <p className="text-xs text-text-secondary">

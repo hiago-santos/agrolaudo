@@ -1,5 +1,5 @@
 import { api } from '@/lib/api';
-import type { Project, ProjectStatus, SignatureType } from '@/types/domain';
+import type { Project, ProjectMessage, ProjectStatus, SignatureType } from '@/types/domain';
 
 export interface PublicProject {
   project: Project;
@@ -20,6 +20,29 @@ export interface PublicVerification {
   signatures: Array<{ type: SignatureType; signatoryName: string; signedAt: string | null }>;
 }
 
+export interface PublicProjectView {
+  project: {
+    id: string;
+    number: string;
+    status: ProjectStatus;
+    issueDate: string;
+    producer: { name: string; taxId: string };
+    property: { name: string; city: string; state: string };
+    season: { label: string };
+    agronomist: { name: string; licenseNumber: string };
+    totalRevenue: string;
+    totalCost: string;
+    totalProfit: string;
+    profitMarginPercentage: string;
+    approvedCreditLimit: string | null;
+    bankNotes: string | null;
+    bankReviewedAt: string | null;
+    items: Array<{ id: string; activityName: string; unit: string; netProfit: string }>;
+  };
+  messages: ProjectMessage[];
+  signatures: Array<{ type: SignatureType; signatoryName: string; signedAt: string | null }>;
+}
+
 export const publicService = {
   getProject: (projectId: string, token: string) =>
     api<PublicProject>(`/public/projects/${projectId}?token=${encodeURIComponent(token)}`),
@@ -31,4 +54,9 @@ export const publicService = {
     }),
 
   verify: (hash: string) => api<PublicVerification>(`/public/verify/${hash}`),
+
+  getProjectView: (projectId: string, token: string) =>
+    api<PublicProjectView>(
+      `/public/projects/${projectId}/view?token=${encodeURIComponent(token)}`,
+    ),
 };

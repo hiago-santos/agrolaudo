@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { CompactCurrency } from '@/components/ui/Compact';
 import { Label, Textarea } from '@/components/ui/Input';
 import { SkeletonTable } from '@/components/ui/Skeleton';
 import {
@@ -27,14 +28,13 @@ interface Step3Props {
   onChange: (patch: Partial<ProjectDraft>) => void;
   onBack: () => void;
   /**
-   * Presente quando este passo está completando um projeto já existente (aberto pelo
-   * banco, ver CompleteProject.tsx) — o botão final atualiza esse projeto (o que já
-   * transiciona BANK_INITIATED -> DRAFT no backend) em vez de criar um novo.
+   * Presente quando este passo está completando ou ajustando um projeto já existente.
    */
   projectId?: string;
+  mode?: 'complete' | 'adjust';
 }
 
-export function Step3Review({ draft, onChange, onBack, projectId }: Step3Props) {
+export function Step3Review({ draft, onChange, onBack, projectId, mode = 'complete' }: Step3Props) {
   const navigate = useNavigate();
   const [result, setResult] = useState<ProjectCalculationResult | null>(null);
   const [loadingResult, setLoadingResult] = useState(true);
@@ -77,7 +77,12 @@ export function Step3Review({ draft, onChange, onBack, projectId }: Step3Props) 
           items: itemsInput,
           notes: draft.notes || undefined,
         });
-        toast.success('Projeto completado.', 'Colete as assinaturas na tela de detalhe.');
+        toast.success(
+          mode === 'adjust' ? 'Ajustes salvos.' : 'Projeto completado.',
+          mode === 'adjust'
+            ? 'Reenvie para análise quando estiver pronto.'
+            : 'Colete as assinaturas na tela de detalhe.',
+        );
         navigate(`/projects/${projectId}`);
         return;
       }
@@ -130,27 +135,31 @@ export function Step3Review({ draft, onChange, onBack, projectId }: Step3Props) 
           <SkeletonTable rows={4} columns={5} />
         ) : (
           <>
-            <Table className="min-w-[640px]">
+            <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Atividade</TableHead>
-                  <TableHead>Unidade</TableHead>
-                  <TableHead className="text-right">Faturamento</TableHead>
-                  <TableHead className="text-right">Custo</TableHead>
-                  <TableHead className="text-right">Receita Líquida</TableHead>
+                  <TableHead className="w-[36%]">Atividade</TableHead>
+                  <TableHead className="hidden w-[14%] sm:table-cell">Unid.</TableHead>
+                  <TableHead className="w-[22%] text-right">Fat.</TableHead>
+                  <TableHead className="hidden w-[18%] text-right md:table-cell">Custo</TableHead>
+                  <TableHead className="w-[28%] text-right sm:w-[22%]">Líquido</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {result?.items.map((item) => (
                   <TableRow key={item.activityId}>
                     <TableCell className="font-medium">{item.activityName}</TableCell>
-                    <TableCell className="text-text-secondary">{unitLabel(item.unit)}</TableCell>
-                    <TableCell className="text-right">
-                      {formatCurrency(item.grossRevenue)}
+                    <TableCell className="hidden text-text-secondary sm:table-cell">
+                      {unitLabel(item.unit)}
                     </TableCell>
-                    <TableCell className="text-right">{formatCurrency(item.totalCost)}</TableCell>
+                    <TableCell className="text-right">
+                      <CompactCurrency value={item.grossRevenue} />
+                    </TableCell>
+                    <TableCell className="hidden text-right md:table-cell">
+                      <CompactCurrency value={item.totalCost} />
+                    </TableCell>
                     <TableCell className="text-right font-medium text-accent">
-                      {formatCurrency(item.netProfit)}
+                      <CompactCurrency value={item.netProfit} />
                     </TableCell>
                   </TableRow>
                 ))}

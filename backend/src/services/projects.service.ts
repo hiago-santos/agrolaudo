@@ -1,6 +1,7 @@
 import type { Prisma, PrismaClient, ProjectStatus } from '@prisma/client';
 
 import { consolidate } from '../core/calculator.js';
+import type { Env } from '../env.js';
 import {
   PROJECT_DETAIL_INCLUDE,
   PROJECT_SUMMARY_INCLUDE,
@@ -8,6 +9,7 @@ import {
 } from '../lib/prismaIncludes.js';
 import { ConflictError, NotFoundError, ValidationError } from '../lib/errors.js';
 import { polygonAreaHectares, type GeoJsonPolygon } from '../lib/geo.js';
+import { ensureMinioBucket, getMinioClient } from '../lib/minio.js';
 
 import { calculateProjectItems, type ProjectItemInput } from './calculation.service.js';
 import { nextProjectNumber } from './numbering.service.js';
@@ -219,13 +221,13 @@ export async function initiateProject(
   }, TRANSACTION_OPTIONS);
 }
 
-const EDITABLE_STATUSES: ProjectStatus[] = ['DRAFT', 'BANK_INITIATED'];
+const EDITABLE_STATUSES: ProjectStatus[] = ['DRAFT', 'BANK_INITIATED', 'AWAITING_PRODUCER_INFO'];
 
 export async function updateProject(prisma: PrismaClient, id: string, input: UpdateProjectInput) {
   const project = await getProject(prisma, id);
   if (!EDITABLE_STATUSES.includes(project.status)) {
     throw new ConflictError(
-      'Só é possível editar projetos em rascunho. Para corrigir um projeto já assinado, duplique-o.',
+      'Só é possível editar projetos em rascunho ou em ajuste solicitado pelo banco.',
     );
   }
 
@@ -281,6 +283,7 @@ const NON_TERMINAL_STATUSES: ProjectStatus[] = [
   'PENDING_SIGNATURES',
   'SIGNED',
   'UNDER_BANK_REVIEW',
+  'AWAITING_PRODUCER_INFO',
 ];
 
 export async function cancelProject(prisma: PrismaClient, id: string) {
@@ -355,4 +358,33 @@ export async function duplicateProject(prisma: PrismaClient, id: string, newSeas
     notes: original.notes ?? undefined,
     items: itemsInput,
   });
+}
+
+async function deleteProjectStorage(env: Env, projectId: string): Promise<void> {
+  const ready = await ensureMinioBucket(env);
+  if (!ready) return;
+
+  const minio = getMinioClient(env);
+  const prefix = `projects/${projectId}/`;
+  const objectNames: string[] = [];
+
+  await new Promise<void>((resolve, reject) => {
+    const stream = minio.listObjectsV2(env.MINIO_BUCKET, prefix, true);
+    stream.on('data', (obj) => {
+      if (obj.name) objectNames.push(obj.name);
+    });
+    stream.on('error', reject);
+    stream.on('end', resolve);
+  });
+
+  if (objectNames.length > 0) {
+    await minio.removeObjects(env.MINIO_BUCKET, objectNames);
+  }
+}
+
+/** Remove o projeto e todos os dados relacionados (incluindo anexos no MinIO). */
+export async function deleteProject(prisma: PrismaClient, env: Env, id: string): Promise<void> {
+  await getProject(prisma, id);
+  await deleteProjectStorage(env, id).catch(() => undefined);
+  await prisma.project.delete({ where: { id } });
 }

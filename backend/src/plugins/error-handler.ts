@@ -1,4 +1,5 @@
 import fp from 'fastify-plugin';
+import { Prisma } from '@prisma/client';
 import { ZodError } from 'zod';
 import type { FastifyError, FastifyInstance } from 'fastify';
 
@@ -36,6 +37,15 @@ export default fp(async function errorHandlerPlugin(app: FastifyInstance) {
     if (error.validation) {
       const body: ErrorBody = { error: 'VALIDATION_ERROR', message: error.message };
       return reply.status(400).send(body);
+    }
+
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2021') {
+      request.log.error(error);
+      const body: ErrorBody = {
+        error: 'SCHEMA_OUTDATED',
+        message: 'Banco de dados desatualizado. Execute as migrations pendentes.',
+      };
+      return reply.status(503).send(body);
     }
 
     const statusCode =

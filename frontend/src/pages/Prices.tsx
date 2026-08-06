@@ -1,4 +1,9 @@
-import { Download, History, Save, Upload } from 'lucide-react';
+import {
+  ClockCounterClockwise,
+  DownloadSimple,
+  FloppyDisk,
+  UploadSimple,
+} from '@phosphor-icons/react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -183,15 +188,15 @@ export function Prices() {
               onChange={(e) => void onImport(e)}
             />
             <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
-              <Upload className="h-3.5 w-3.5" />
+              <UploadSimple className="h-3.5 w-3.5" />
               Importar
             </Button>
             <Button variant="outline" size="sm" onClick={() => void priceQuotesService.export()}>
-              <Download className="h-3.5 w-3.5" />
+              <DownloadSimple className="h-3.5 w-3.5" />
               Exportar
             </Button>
             <Button size="sm" onClick={() => void save()} loading={saving}>
-              <Save className="h-3.5 w-3.5" />
+              <FloppyDisk className="h-3.5 w-3.5" />
               Salvar novas cotações
             </Button>
           </>
@@ -205,13 +210,13 @@ export function Prices() {
               {ACTIVITY_CATEGORY_LABEL[group.category]}
             </h2>
           </div>
-          <Table className="min-w-[720px]">
+          <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Atividade</TableHead>
-                <TableHead>Unidade</TableHead>
-                <TableHead className="text-right">Preço Unitário (R$)</TableHead>
-                <TableHead className="text-right">Custo/ha (R$)</TableHead>
+                <TableHead className="w-[42%]">Atividade</TableHead>
+                <TableHead className="hidden w-[18%] sm:table-cell">Unidade</TableHead>
+                <TableHead className="w-[28%] text-right sm:w-[20%]">Preço</TableHead>
+                <TableHead className="hidden w-[20%] text-right md:table-cell">Custo/ha</TableHead>
                 <TableHead className="w-10" />
               </TableRow>
             </TableHeader>
@@ -222,11 +227,11 @@ export function Prices() {
                 return (
                   <TableRow key={item.activity.id}>
                     <TableCell className="font-medium">{item.activity.name}</TableCell>
-                    <TableCell>
+                    <TableCell className="hidden sm:table-cell">
                       <Select
                         value={row.unit}
                         onChange={(next) => updateRow(item.activity.id, 'unit', next)}
-                        containerClassName="w-40"
+                        containerClassName="w-32 sm:w-40"
                         size="sm"
                         options={item.activity.allowedUnits.map((u) => ({
                           value: u,
@@ -241,10 +246,10 @@ export function Prices() {
                         min="0"
                         value={row.unitPrice}
                         onChange={(e) => updateRow(item.activity.id, 'unitPrice', e.target.value)}
-                        className="ml-auto h-8 w-28 text-right font-mono tabular-nums"
+                        className="ml-auto h-8 w-full max-w-[5.5rem] text-right font-mono tabular-nums sm:max-w-[7rem]"
                       />
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="hidden text-right md:table-cell">
                       <Input
                         type="number"
                         step="0.01"
@@ -263,7 +268,7 @@ export function Prices() {
                         className="rounded-md p-1.5 text-text-tertiary transition-colors hover:bg-bg-subtle hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring"
                         aria-label={`Histórico de ${item.activity.name}`}
                       >
-                        <History className="h-4 w-4" />
+                        <ClockCounterClockwise className="h-4 w-4" />
                       </button>
                     </TableCell>
                   </TableRow>

@@ -7,18 +7,22 @@ import {
   FileText,
   MoreHorizontal,
   Send,
+  Trash2,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 
 import { LocationMapField } from '@/components/map/LocationMapField';
+import { DeleteProjectDialog } from '@/components/project/DeleteProjectDialog';
 import { BankReviewPanel } from '@/components/project/BankReviewPanel';
+import { ProjectAttachmentsPanel } from '@/components/project/ProjectAttachmentsPanel';
 import { ProjectStatusTimeline } from '@/components/project/ProjectStatusTimeline';
 import { SignaturesPanel } from '@/components/project/SignaturesPanel';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Badge } from '@/components/ui/Badge';
 import { Button, buttonVariants } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { CompactCurrency } from '@/components/ui/Compact';
 import { Dialog } from '@/components/ui/Dialog';
 import { DropdownMenu, DropdownMenuItem } from '@/components/ui/DropdownMenu';
 import { Select } from '@/components/ui/Input';
@@ -32,7 +36,7 @@ import {
   TableRow,
 } from '@/components/ui/Table';
 import { ApiError } from '@/lib/api';
-import { formatCurrency, formatNumber, formatPercentage } from '@/lib/format';
+import { formatNumber, formatPercentage } from '@/lib/format';
 import { PROJECT_STATUS_LABEL, PROJECT_STATUS_TONE } from '@/lib/projectStatus';
 import { unitLabel } from '@/lib/units';
 import { projectsService } from '@/services/projects';
@@ -47,6 +51,7 @@ const NON_TERMINAL: Project['status'][] = [
   'PENDING_SIGNATURES',
   'SIGNED',
   'UNDER_BANK_REVIEW',
+  'AWAITING_PRODUCER_INFO',
 ];
 
 export function ProjectDetail() {
@@ -54,6 +59,9 @@ export function ProjectDetail() {
   const navigate = useNavigate();
   const canEdit = useAuthStore((s) => s.hasRole('ADMIN', 'AGRONOMIST'));
   const canReview = useAuthStore((s) => s.hasRole('ADMIN', 'BANK'));
+  const canAdjust = useAuthStore((s) => s.hasRole('ADMIN', 'AGRONOMIST', 'BANK'));
+  const canUploadProducerAttachments = useAuthStore((s) => s.hasRole('ADMIN', 'AGRONOMIST'));
+  const canUploadBankAttachments = useAuthStore((s) => s.hasRole('ADMIN', 'BANK'));
 
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
@@ -62,6 +70,8 @@ export function ProjectDetail() {
   const [targetSeason, setTargetSeason] = useState('');
   const [duplicating, setDuplicating] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   async function load() {
@@ -115,6 +125,21 @@ export function ProjectDetail() {
     }
   }
 
+  async function confirmDelete() {
+    if (!id || !project) return;
+    setDeleting(true);
+    try {
+      await projectsService.remove(id);
+      toast.success(`Projeto ${project.number} excluído.`);
+      navigate('/projects');
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : 'Não foi possível excluir o projeto.');
+    } finally {
+      setDeleting(false);
+      setDeleteOpen(false);
+    }
+  }
+
   async function submitForReview() {
     if (!id) return;
     setSubmitting(true);
@@ -145,6 +170,7 @@ export function ProjectDetail() {
   if (!project) return null;
 
   const canCancel = canEdit && NON_TERMINAL.includes(project.status);
+  const canDelete = canEdit;
   const canSubmitForReview = canEdit && project.status === 'SIGNED';
   const canComplete = canEdit && project.status === 'BANK_INITIATED';
 
@@ -195,6 +221,14 @@ export function ProjectDetail() {
                   icon={<Copy className="h-4 w-4" />}
                 >
                   Duplicar
+                </DropdownMenuItem>
+              )}
+              {canDelete && (
+                <DropdownMenuItem
+                  onSelect={() => setDeleteOpen(true)}
+                  icon={<Trash2 className="h-4 w-4" />}
+                >
+                  Excluir projeto
                 </DropdownMenuItem>
               )}
             </DropdownMenu>
@@ -254,12 +288,18 @@ export function ProjectDetail() {
         </Card>
       ) : (
         <>
-          <div className="grid gap-4 sm:grid-cols-4">
-            <Summary label="Faturamento Bruto" value={formatCurrency(project.totalRevenue)} />
-            <Summary label="Custo de Produção" value={formatCurrency(project.totalCost)} />
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <Summary
+              label="Faturamento Bruto"
+              value={<CompactCurrency value={project.totalRevenue} />}
+            />
+            <Summary
+              label="Custo de Produção"
+              value={<CompactCurrency value={project.totalCost} />}
+            />
             <Summary
               label="Receita Líquida"
-              value={formatCurrency(project.totalProfit)}
+              value={<CompactCurrency value={project.totalProfit} />}
               highlight
             />
             <Summary
@@ -269,14 +309,25 @@ export function ProjectDetail() {
           </div>
 
           {(project.status === 'UNDER_BANK_REVIEW' ||
+            project.status === 'AWAITING_PRODUCER_INFO' ||
             project.status === 'APPROVED' ||
             project.status === 'REJECTED') && (
             <BankReviewPanel
               project={project}
               canReview={canReview}
+              canAdjust={canAdjust}
               onUpdated={() => void load()}
             />
           )}
+
+          <div>
+            <p className="mb-3 text-sm font-semibold text-text">Anexos</p>
+            <ProjectAttachmentsPanel
+              projectId={project.id}
+              canUploadProducer={canUploadProducerAttachments}
+              canUploadBank={canUploadBankAttachments}
+            />
+          </div>
 
           <div>
             <p className="mb-3 text-sm font-semibold text-text">Assinaturas</p>
@@ -289,35 +340,43 @@ export function ProjectDetail() {
                 Quadro de Produção
               </h2>
             </div>
-            <Table className="min-w-[900px]">
+            <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Atividade</TableHead>
-                  <TableHead>Unidade</TableHead>
-                  <TableHead className="text-right">Área (ha)</TableHead>
-                  <TableHead className="text-right">Produtividade</TableHead>
-                  <TableHead className="text-right">Produção Total</TableHead>
-                  <TableHead className="text-right">Faturamento</TableHead>
-                  <TableHead className="text-right">Custo</TableHead>
-                  <TableHead className="text-right">Receita Líquida</TableHead>
+                  <TableHead className="w-[40%]">Atividade</TableHead>
+                  <TableHead className="hidden w-[12%] sm:table-cell">Unid.</TableHead>
+                  <TableHead className="hidden w-[10%] text-right md:table-cell">Área</TableHead>
+                  <TableHead className="hidden w-[12%] text-right lg:table-cell">Prod.</TableHead>
+                  <TableHead className="hidden w-[12%] text-right lg:table-cell">Total</TableHead>
+                  <TableHead className="hidden w-[14%] text-right md:table-cell">Fat.</TableHead>
+                  <TableHead className="hidden w-[14%] text-right sm:table-cell">Custo</TableHead>
+                  <TableHead className="w-[28%] text-right sm:w-[18%]">Líquido</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {project.items.map((item) => (
                   <TableRow key={item.id}>
                     <TableCell className="font-medium">{item.activityName}</TableCell>
-                    <TableCell className="text-text-secondary">{unitLabel(item.unit)}</TableCell>
-                    <TableCell className="text-right">{formatNumber(item.areaHectares)}</TableCell>
-                    <TableCell className="text-right">{formatNumber(item.productivity)}</TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="hidden text-text-secondary sm:table-cell">
+                      {unitLabel(item.unit)}
+                    </TableCell>
+                    <TableCell className="hidden text-right md:table-cell">
+                      {formatNumber(item.areaHectares)}
+                    </TableCell>
+                    <TableCell className="hidden text-right lg:table-cell">
+                      {formatNumber(item.productivity)}
+                    </TableCell>
+                    <TableCell className="hidden text-right lg:table-cell">
                       {formatNumber(item.totalProduction)}
                     </TableCell>
-                    <TableCell className="text-right">
-                      {formatCurrency(item.grossRevenue)}
+                    <TableCell className="hidden text-right md:table-cell">
+                      <CompactCurrency value={item.grossRevenue} />
                     </TableCell>
-                    <TableCell className="text-right">{formatCurrency(item.totalCost)}</TableCell>
+                    <TableCell className="hidden text-right sm:table-cell">
+                      <CompactCurrency value={item.totalCost} />
+                    </TableCell>
                     <TableCell className="text-right font-medium text-accent">
-                      {formatCurrency(item.netProfit)}
+                      <CompactCurrency value={item.netProfit} />
                     </TableCell>
                   </TableRow>
                 ))}
@@ -371,6 +430,14 @@ export function ProjectDetail() {
           />
         </div>
       </Dialog>
+
+      <DeleteProjectDialog
+        open={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        projectNumber={project.number}
+        loading={deleting}
+        onConfirm={() => void confirmDelete()}
+      />
     </div>
   );
 }
@@ -381,17 +448,18 @@ function Summary({
   highlight,
 }: {
   label: string;
-  value: string;
+  value: ReactNode;
   highlight?: boolean;
 }) {
   return (
-    <Card className="p-4">
-      <p className="text-xs font-medium text-text-secondary">{label}</p>
+    <Card className="p-3 sm:p-4">
+      <p className="text-[11px] font-medium text-text-secondary sm:text-xs">{label}</p>
       <p
+        data-compact-host
         className={
           highlight
-            ? 'mt-1 text-xl font-semibold text-accent'
-            : 'mt-1 text-xl font-semibold text-text'
+            ? 'mt-1 min-w-0 font-mono text-base font-semibold tabular-nums text-accent sm:text-xl'
+            : 'mt-1 min-w-0 font-mono text-base font-semibold tabular-nums text-text sm:text-xl'
         }
       >
         {value}

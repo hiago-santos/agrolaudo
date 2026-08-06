@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { FieldError, Input, Label, Select } from '@/components/ui/Input';
 import { ApiError } from '@/lib/api';
+import { maskPhone } from '@/lib/format';
 import { producersService } from '@/services/producers';
 import { toast } from '@/stores/toast';
 import type { Producer } from '@/types/domain';
@@ -53,7 +54,7 @@ export function ProducerFormDialog({ open, onClose, producer, onSaved }: Produce
           ? {
               name: producer.name,
               taxId: producer.taxId,
-              phone: producer.phone ?? '',
+              phone: maskPhone(producer.phone ?? ''),
               email: producer.email ?? '',
               city: producer.city,
               state: producer.state,
@@ -74,7 +75,11 @@ export function ProducerFormDialog({ open, onClose, producer, onSaved }: Produce
 
   async function onSubmit(data: FormValues) {
     try {
-      const payload = { ...data, email: data.email || undefined, phone: data.phone || undefined };
+      const payload = {
+        ...data,
+        email: data.email || undefined,
+        phone: data.phone ? maskPhone(data.phone) : undefined,
+      };
       const saved = producer
         ? await producersService.update(producer.id, payload)
         : await producersService.create(payload);
@@ -141,7 +146,20 @@ export function ProducerFormDialog({ open, onClose, producer, onSaved }: Produce
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <Label htmlFor="phone">Telefone</Label>
-            <Input id="phone" {...register('phone')} />
+            <Input
+              id="phone"
+              inputMode="tel"
+              autoComplete="tel"
+              placeholder="(00) 00000-0000"
+              maxLength={15}
+              {...register('phone')}
+              onChange={(event) => {
+                setValue('phone', maskPhone(event.target.value), {
+                  shouldDirty: true,
+                  shouldValidate: true,
+                });
+              }}
+            />
           </div>
           <div>
             <Label htmlFor="email">E-mail</Label>

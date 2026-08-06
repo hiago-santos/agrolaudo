@@ -6,12 +6,14 @@ import {
   publicSignBodySchema,
   publicTokenQuerySchema,
 } from '../schemas/public.schemas.js';
+import { publicTokenQuerySchema as publicViewTokenQuerySchema } from '../schemas/producerInfo.schemas.js';
+import * as producerInfoService from '../services/producerInfo.service.js';
 import * as signaturesService from '../services/signatures.service.js';
 
 /**
  * Rotas SEM autenticação — acessadas pelo link de assinatura (produtor/agrônomo
- * remoto) e pelo QR Code de verificação impresso no documento. Segurança aqui é
- * o token (signatures.service valida existência + validade), não a sessão.
+ * remoto), visualização pública do projeto e pelo QR Code de verificação. Segurança
+ * aqui é o token, não a sessão.
  */
 const publicRoutes: FastifyPluginAsyncZod = async (app) => {
   app.get(
@@ -61,6 +63,24 @@ const publicRoutes: FastifyPluginAsyncZod = async (app) => {
       },
     },
     async (request) => signaturesService.verifyByHash(app.prisma, request.params.hash),
+  );
+
+  app.get(
+    '/projects/:id/view',
+    {
+      schema: {
+        params: publicProjectParamsSchema,
+        querystring: publicViewTokenQuerySchema,
+        tags: ['public'],
+        summary: 'Visualização pública do projeto para o produtor (resultado)',
+      },
+    },
+    async (request) =>
+      producerInfoService.getPublicProjectView(
+        app.prisma,
+        request.params.id,
+        request.query.token,
+      ),
   );
 };
 

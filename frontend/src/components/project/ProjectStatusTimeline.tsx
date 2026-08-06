@@ -1,4 +1,4 @@
-import { Ban, Check, Landmark, PenLine, Sprout, ThumbsDown } from 'lucide-react';
+import { Ban, Check, Clock, Landmark, PenLine, Sprout, ThumbsDown } from 'lucide-react';
 
 import { cn } from '@/lib/cn';
 import type { ProjectStatus } from '@/types/domain';
@@ -20,6 +20,7 @@ const FLOW: TimelineStep[] = [
   { status: 'PENDING_SIGNATURES', label: 'Aguardando assinaturas', icon: PenLine },
   { status: 'SIGNED', label: 'Assinado', icon: Check },
   { status: 'UNDER_BANK_REVIEW', label: 'Em análise no banco', icon: Landmark },
+  { status: 'AWAITING_PRODUCER_INFO', label: 'Em ajuste', icon: Clock },
   { status: 'APPROVED', label: 'Decisão do banco', icon: Check },
 ];
 
@@ -29,6 +30,7 @@ const FLOW_ORDER: ProjectStatus[] = [
   'PENDING_SIGNATURES',
   'SIGNED',
   'UNDER_BANK_REVIEW',
+  'AWAITING_PRODUCER_INFO',
   'APPROVED',
 ];
 
@@ -53,9 +55,11 @@ export function ProjectStatusTimeline({ status, wasBankInitiated }: ProjectStatu
     ? FLOW
     : FLOW.filter((step) => step.status !== 'BANK_INITIATED');
   const rejected = status === 'REJECTED';
+  const timelineStatus =
+    status === 'AWAITING_PRODUCER_INFO' ? 'AWAITING_PRODUCER_INFO' : status;
   const currentIndex = rejected
     ? FLOW_ORDER.indexOf('UNDER_BANK_REVIEW')
-    : FLOW_ORDER.indexOf(status);
+    : FLOW_ORDER.indexOf(timelineStatus);
 
   return (
     <ol className="flex w-full items-start">

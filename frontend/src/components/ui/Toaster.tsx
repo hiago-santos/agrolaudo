@@ -1,10 +1,10 @@
-import { CheckCircle2, Info, X, XCircle } from 'lucide-react';
+import { CheckCircle, Info, X, XCircle } from '@phosphor-icons/react';
 
 import { cn } from '@/lib/cn';
 import { useToastStore, type ToastVariant } from '@/stores/toast';
 
-const ICON: Record<ToastVariant, typeof CheckCircle2> = {
-  success: CheckCircle2,
+const ICON: Record<ToastVariant, typeof CheckCircle> = {
+  success: CheckCircle,
   error: XCircle,
   info: Info,
 };
