@@ -321,17 +321,21 @@ function MapField({
     map.fitBounds(bounds, 48);
   }
 
-  // Enquadra o que já existe assim que o mapa fica pronto — abrir a edição de uma
-  // propriedade já demarcada cai direto na fazenda, sem procurar no zoom do Brasil.
-  const fitted = useRef(false);
+  // Enquadra demarcação ou centraliza na propriedade ao abrir/trocar referência.
+  const referencePathKey = referencePath.map((p) => `${p.lat},${p.lng}`).join('|');
   useEffect(() => {
-    if (fitted.current || !map) return;
-    const initial = path.length >= 3 ? path : referencePath;
-    if (initial.length < 3) return;
-    fitted.current = true;
-    fitTo(initial);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [map, path, referencePath]);
+    if (!map) return;
+    const targets = path.length >= 3 ? path : referencePath;
+    if (targets.length >= 3) {
+      fitTo(targets);
+      return;
+    }
+    const cam = center ?? referencePath[0] ?? null;
+    if (cam) {
+      map.panTo(cam);
+      map.setZoom(16);
+    }
+  }, [map, center?.lat, center?.lng, referencePathKey]);
 
   // Clique num vértice remove o ponto (sem arrastar). Clique direito continua
   // fazendo o mesmo — a API nativa não oferece remoção sozinha.
@@ -552,7 +556,8 @@ function MapField({
                   strokeColor={referenceColor}
                   strokeOpacity={1}
                   strokeWeight={stroke.reference}
-                  fillOpacity={0}
+                  fillColor={referenceColor}
+                  fillOpacity={0.12}
                 />
               </>
             )}
